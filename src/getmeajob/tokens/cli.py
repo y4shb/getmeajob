@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING
 
-from getmeajob.rank.cli import find_job
+from getmeajob.store import JobStore
 from getmeajob.tokens.context import context_pack, context_text
 from getmeajob.tokens.estimate import METHOD, estimate_files
 from getmeajob.tokens.status import status_digest, status_lines
@@ -32,7 +32,7 @@ def _cmd_status(args: argparse.Namespace, ctx: Context) -> int:
 
 def _cmd_context(args: argparse.Namespace, ctx: Context) -> int:
     ws = ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     pack = context_pack(ws, job)
     text = context_text(pack)
     if ctx.out.json_mode:

@@ -12,8 +12,9 @@ import pytest
 from getmeajob.apply.runner import run_apply
 from getmeajob.errors import GetmeajobError
 from getmeajob.models import ApplyMode, ApplyStatus, AppStatus, LedgerEntry, QueueKind
-from getmeajob.store import Ledger, QueueLog, StatusLog, now_iso
+from getmeajob.store import JobStore, Ledger, QueueLog, StatusLog, now_iso
 from getmeajob.workspace import Workspace
+from getmeajob.yamlio import dump_yaml, load_yaml
 
 GH = "greenhouse:examplecorp:1001"
 ASHBY = "ashby:samplesystems:5a1e0000-0000-4000-8000-000000000001"
@@ -104,6 +105,37 @@ def test_per_company_cap(ready_ws: Workspace, set_apply: Callable[..., None]) ->
     assert "cap 2" in entry.detail
 
 
+def test_jobs_you_ruled_out_or_the_board_closed_are_never_opened(
+    ready_ws: Workspace, set_apply: Callable[..., None]
+) -> None:
+    set_apply(ready_ws, submit_boards=["greenhouse", "ashby"])
+    StatusLog(ready_ws).record(GH, AppStatus.withdrawn, "manual")
+    JobStore(ready_ws).mark_closed([ASHBY], now_iso())
+    for mode in ApplyMode:
+        entries = _run(ready_ws, [GH, ASHBY], mode, headed=True)
+        assert [e.status for e in entries] == [ApplyStatus.skipped_excluded] * 2
+        assert "tracked as withdrawn" in entries[0].detail
+        assert "closed on the board" in entries[1].detail
+    assert not ready_ws.ledger_path.exists()
+
+
+def test_exclude_companies_from_ranking_also_counts(ready_ws: Workspace) -> None:
+    prefs = load_yaml(ready_ws.preferences_path)
+    prefs["exclude_companies"] = ["Sample Systems"]
+    dump_yaml(ready_ws.preferences_path, prefs)
+    (entry,) = _run(ready_ws, [ASHBY], ApplyMode.dry)
+    assert entry.status == ApplyStatus.skipped_excluded and "exclude_companies" in entry.detail
+
+
+def test_plan_older_than_the_profile_is_refused(ready_ws: Workspace) -> None:
+    profile = load_yaml(ready_ws.profile_path)
+    profile["contact"]["phone"] = "+1 555 0101"
+    dump_yaml(ready_ws.profile_path, profile)
+    entries = _run(ready_ws, [GH, ASHBY], ApplyMode.dry)
+    assert [e.status for e in entries] == [ApplyStatus.skipped_not_ready] * 2
+    assert all("out of date" in e.detail and "getmeajob plan" in e.detail for e in entries)
+
+
 def test_missing_plan_is_reported(ready_ws: Workspace) -> None:
     (entry,) = _run(
         ready_ws, ["lever:demowidgets:7c0de000-0000-4000-8000-000000000001"], ApplyMode.dry
@@ -149,13 +181,15 @@ def test_submit_results_code_spam_and_fill_problem(
     use_forms(ready_ws, greenhouse="code=1", ashby="spam=1")
     clicks = _count_submits(monkeypatch)
     code, spam = _run(ready_ws, [GH, ASHBY], ApplyMode.submit)
-    assert code.status == ApplyStatus.needs_email_code
-    assert spam.status == ApplyStatus.captcha and "spam" in spam.detail
+    assert code.status == spam.status == ApplyStatus.awaiting_human  # clicked: never again
+    assert "code sent to your email" in code.detail and "spam" in spam.detail
     assert clicks == {"greenhouse": 1, "ashby": 1}
     kinds = {(i.job_key, i.kind) for i in QueueLog(ready_ws).open_items()}
-    assert kinds == {(GH, QueueKind.needs_email_code), (ASHBY, QueueKind.captcha)}
-    later = _run(ready_ws, [GH], ApplyMode.dry)
-    assert later[0].status == ApplyStatus.skipped_duplicate and "hold" in later[0].detail
+    assert kinds == {(GH, QueueKind.manual), (ASHBY, QueueKind.manual)}
+    for mode in ApplyMode:
+        later = _run(ready_ws, [GH, ASHBY], mode, headed=True)
+        assert [e.status for e in later] == [ApplyStatus.skipped_duplicate] * 2
+    assert clicks == {"greenhouse": 1, "ashby": 1}
 
     use_forms(ready_ws)
     path = ready_ws.plan_path(GH)
@@ -175,18 +209,18 @@ def test_submit_results_code_spam_and_fill_problem(
 def test_hold_code_flow_with_injected_human(
     ready_ws: Workspace, use_forms: Callable[..., None], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from getmeajob.apply.guards import detect_email_code
+    from getmeajob.apply.guards import email_code_in, scan_page
     from getmeajob.apply.watch import wait_for_human
 
     use_forms(ready_ws, greenhouse="code=1")
     clicks = _count_submits(monkeypatch)
     seen: list[str] = []
 
-    def human(page: Any, timeout: float) -> ApplyStatus:
-        assert detect_email_code(page)  # getmeajob clicked Submit once; the code step is up
+    def human(page: Any, timeout: float, before: Any) -> ApplyStatus:
+        assert email_code_in(scan_page(page))  # getmeajob clicked Submit once; code step is up
         page.fill("input[autocomplete=one-time-code]", "ABCD1234")
         page.click("#verify-code")
-        return wait_for_human(page, timeout)
+        return wait_for_human(page, timeout, before)
 
     (entry,) = _run(
         ready_ws, [GH], ApplyMode.hold, click_submit=True, wait_for_human=human, notify=seen.append
@@ -200,15 +234,33 @@ def test_hold_code_flow_with_injected_human(
 
 
 @browser
+def test_hold_click_then_no_confirmation_is_never_clicked_again(
+    ready_ws: Workspace, use_forms: Callable[..., None], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_forms(ready_ws, greenhouse="code=1")
+    clicks = _count_submits(monkeypatch)
+
+    def human(page: Any, timeout: float, before: Any) -> ApplyStatus:
+        return ApplyStatus.timeout  # the human never types the emailed code
+
+    for _ in range(2):
+        (entry,) = _run(ready_ws, [GH], ApplyMode.hold, click_submit=True, wait_for_human=human)
+    assert entry.status == ApplyStatus.skipped_duplicate and clicks == {"greenhouse": 1}
+    (first,) = Ledger(ready_ws).entries()
+    assert first.status == ApplyStatus.awaiting_human
+    assert first.detail.startswith("Submit was clicked once")
+
+
+@browser
 def test_window_closed_continues_next_job(ready_ws: Workspace) -> None:
     from getmeajob.apply.watch import wait_for_human
 
-    def human(page: Any, timeout: float) -> ApplyStatus:
+    def human(page: Any, timeout: float, before: Any) -> ApplyStatus:
         if "greenhouse" in page.url:
             page.context.browser.close()  # the human quits the whole browser mid-hold
-            return wait_for_human(page, timeout)
+            return wait_for_human(page, timeout, before)
         page.get_by_role("button", name="Submit Application").click()
-        return wait_for_human(page, timeout)
+        return wait_for_human(page, timeout, before)
 
     entries = _run(ready_ws, [GH, ASHBY], ApplyMode.hold, wait_for_human=human)
     assert [e.status for e in entries] == [ApplyStatus.closed_by_user, ApplyStatus.submitted]
@@ -223,20 +275,39 @@ def test_window_closed_continues_next_job(ready_ws: Workspace) -> None:
 def test_page_crash_is_an_error_and_the_run_goes_on(ready_ws: Workspace) -> None:
     from getmeajob.apply.watch import wait_for_human
 
-    def human(page: Any, timeout: float) -> ApplyStatus:
+    def human(page: Any, timeout: float, before: Any) -> ApplyStatus:
         if "greenhouse" in page.url:
             with contextlib.suppress(Exception):
                 page.goto("chrome://crash")  # a real renderer crash, not a closed window
-            return wait_for_human(page, timeout)
+            return wait_for_human(page, timeout, before)
         if "ashby" in page.url:
             raise RuntimeError("an unexpected bug in this job")
-        return wait_for_human(page, 1)
+        return wait_for_human(page, 1, before)
 
     entries = _run(ready_ws, [GH, ASHBY], ApplyMode.hold, wait_for_human=human)
     assert [e.status for e in entries] == [ApplyStatus.error, ApplyStatus.error]
     assert "crashed" in entries[0].detail and "RuntimeError" in entries[1].detail
     again = _run(ready_ws, [ASHBY], ApplyMode.dry)  # errors never block a later run
     assert again[0].status == ApplyStatus.dry_ok
+
+
+@browser
+def test_hold_ignores_success_text_already_on_the_page(open_mock: Callable[..., Any]) -> None:
+    from getmeajob.apply.guards import scan_page
+    from getmeajob.apply.watch import wait_for_human
+
+    page = open_mock("greenhouse")
+    page.evaluate(
+        "document.getElementById('job-description').append("
+        "'Once your application has been received, a person reads it.')"
+    )
+    before = scan_page(page)
+    assert wait_for_human(page, 0.5, before) == ApplyStatus.timeout
+    page.evaluate(
+        "location.hash = 'done';"
+        "document.getElementById('app').innerHTML = '<h1>Thank you for applying</h1>'"
+    )
+    assert wait_for_human(page, 5, before) == ApplyStatus.submitted
 
 
 @browser

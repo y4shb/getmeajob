@@ -18,21 +18,20 @@ from __future__ import annotations
 import importlib.util
 import json
 import time
-import urllib.robotparser
 from collections.abc import Callable, Mapping
 from typing import Any
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote
 
 from getmeajob.errors import GetmeajobError, HttpError
 from getmeajob.files import now_iso, read_json, write_json_atomic
 from getmeajob.http import HttpClient
 from getmeajob.models import Job, Option, Question, QuestionType
 from getmeajob.settings import load_settings
+from getmeajob.sources.registry import ATS_FOR_FORMS
 from getmeajob.textutil import html_to_text, short_hash, strip_invisible
 from getmeajob.workspace import Workspace
 
 SCHEMA_TTL = 24 * 3600.0
-FORM_ATS = frozenset({"greenhouse", "ashby"})
 GREENHOUSE_JOB = "https://boards-api.greenhouse.io/v1/boards/{board}/jobs/{job_id}"
 ASHBY_GRAPHQL = "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting"
 ASHBY_QUERY = (
@@ -291,24 +290,9 @@ def _ashby_request(client: HttpClient, job: Job) -> list[Question]:
     return parse_ashby(resp.json())
 
 
-def _robots_allow(client: HttpClient, url: str) -> bool:
-    parts = urlsplit(url)
-    robots_url = f"{parts.scheme}://{parts.netloc}/robots.txt"
-    try:
-        resp = client.get(robots_url)
-    except HttpError:
-        return False
-    if resp.status >= 400:
-        return True
-    parser = urllib.robotparser.RobotFileParser(robots_url)
-    parser.parse(resp.text.splitlines())
-    return parser.can_fetch(client.user_agent, url)
-
-
 def default_page_reader(ws: Workspace) -> PageReader | None:
     """The Chromium page reader, or None in offline mode or without Playwright."""
-    settings = load_settings(ws)
-    if settings.offline or settings.fixtures is not None:
+    if load_settings(ws).fixtures is not None:
         return None
     if importlib.util.find_spec("playwright") is None:
         return None
@@ -317,9 +301,7 @@ def default_page_reader(ws: Workspace) -> PageReader | None:
     return schema_from_page
 
 
-def _ashby(
-    ws: Workspace, client: HttpClient, job: Job, reader: PageReader | None
-) -> list[Question]:
+def _ashby(client: HttpClient, job: Job, reader: PageReader | None) -> list[Question]:
     try:
         return _ashby_request(client, job)
     except AshbySchemaUnavailable as first:
@@ -329,10 +311,10 @@ def _ashby(
                 hint="Install the browser extra (pip install 'getmeajob[browser]') or try later.",
             ) from first
         url = form_url(job)
-        if not _robots_allow(client, url):
-            raise SchemaUnavailable(
-                f"{first.message} robots.txt does not allow reading {url}."
-            ) from first
+        try:
+            client.get(url, check_robots=True)
+        except HttpError as exc:
+            raise SchemaUnavailable(f"{first.message} {exc.message}") from first
         try:
             return reader(url)
         except GetmeajobError:
@@ -371,7 +353,7 @@ def fetch_schema(
     `page_reader` is the Ashby fallback: True picks the default (Chromium when allowed),
     None or False turns it off, a callable replaces it (tests). Raises SchemaUnavailable.
     """
-    if job.ats not in FORM_ATS:
+    if job.ats not in ATS_FOR_FORMS:
         raise SchemaUnavailable(f"getmeajob cannot read {job.ats} forms yet.")
     if not refresh:
         cached = _cached(ws, job)
@@ -381,7 +363,7 @@ def fetch_schema(
         questions = _greenhouse(client, job)
     else:
         reader = default_page_reader(ws) if page_reader is True else page_reader or None
-        questions = _ashby(ws, client, job, reader if callable(reader) else None)
+        questions = _ashby(client, job, reader if callable(reader) else None)
     record = {
         "job_key": job.key,
         "ats": job.ats,

@@ -26,7 +26,6 @@ from getmeajob.sources.workable import WorkableSource
 
 ENTRY_POINT_GROUP = "getmeajob.sources"
 ATS_FOR_FORMS = frozenset({"greenhouse", "ashby"})
-BUILTIN_ORDER = ("greenhouse", "ashby", "lever", "smartrecruiters", "workable", "recruitee")
 
 _problems: list[str] = []
 

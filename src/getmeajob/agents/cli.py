@@ -61,8 +61,6 @@ def _cmd_install(args: argparse.Namespace, ctx: Context) -> int:
     out.line(f"Run these two commands in {project}:")
     for command in commands:
         out.line(f"  {command}")
-    if assets.marketplace_root() is None:
-        out.line("Replace <owner> with the GitHub account that hosts getmeajob.")
     out.line("Inside Claude Code you can type them as /plugin marketplace add and /plugin install.")
     out.done(
         "Without a plugin: add --flat to copy the files into .claude/ instead.",

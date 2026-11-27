@@ -20,7 +20,7 @@ from openpyxl import load_workbook
 from getmeajob.errors import GetmeajobError
 from getmeajob.textutil import short_hash
 from getmeajob.track.notes import clean_note
-from getmeajob.track.status import norm_word as norm_word  # shared with parse_status
+from getmeajob.track.status import norm_word
 
 TRACKER_SHEET = "Tracker"
 KEY = "Key"

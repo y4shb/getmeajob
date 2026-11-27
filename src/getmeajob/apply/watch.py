@@ -52,10 +52,16 @@ def _ended(page: Page, exc: Exception) -> ApplyStatus:
     return ApplyStatus.closed_by_user
 
 
-def wait_for_human(page: Page, timeout: float) -> ApplyStatus:
+def _succeeded(scan: PageScan, before: PageScan) -> bool:
+    """Success shown now that was not shown in `before` (or shown at a new address)."""
+    return success_in(scan) and (not success_in(before) or scan.url != before.url)
+
+
+def wait_for_human(page: Page, timeout: float, before: PageScan) -> ApplyStatus:
     """Wait while the human finishes in the window: check the form, click Submit, type the
-    emailed code. Ends with submitted, captcha, closed_by_user, timeout, or error when
-    the page crashed."""
+    emailed code. `before` is the page before filling, so success text that was already
+    there does not count. Ends with submitted, captcha, closed_by_user, timeout, or error
+    when the page crashed."""
     deadline = time.monotonic() + timeout
     while True:
         if _gone(page):
@@ -65,7 +71,7 @@ def wait_for_human(page: Page, timeout: float) -> ApplyStatus:
         except Exception as exc:
             return _ended(page, exc)
         if scan is not None:
-            if success_in(scan):
+            if _succeeded(scan, before):
                 return ApplyStatus.submitted
             if captcha_in(scan):
                 return ApplyStatus.captcha
@@ -88,13 +94,12 @@ def watch_after_submit(
     start = time.monotonic()
     old_errors = set(before.errors)
     code_text_before = email_code_in(PageScan(body=before.body))
-    success_before = success_in(before)
     while True:
         if _gone(page):
             return ApplyStatus.error, "the page closed right after Submit"
         scan = _scan(page)
         if scan is not None:
-            if success_in(scan) and (not success_before or scan.url != before.url):
+            if _succeeded(scan, before):
                 return ApplyStatus.submitted, "the form showed its confirmation"
             if scan.otp or (email_code_in(scan) and not code_text_before):
                 return ApplyStatus.needs_email_code, "the form asks for a code sent to your email"

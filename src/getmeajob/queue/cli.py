@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 from getmeajob.errors import GetmeajobError
 from getmeajob.models import QueueKind
 from getmeajob.queue.view import group_items, item_row, queue_view
-from getmeajob.rank.cli import find_job
 from getmeajob.store import JobStore, QueueLog
 from getmeajob.textutil import truncate
 
@@ -105,7 +104,7 @@ def _cmd_resolve(args: argparse.Namespace, ctx: Context) -> int:
 
 def _cmd_add(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     note = (args.note or "").strip()
     if not note:
         raise GetmeajobError(

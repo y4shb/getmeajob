@@ -85,16 +85,5 @@ class FixtureTransport(httpx.BaseTransport):
             f"Offline mode has no recorded reply for {request.method} {url}. "
             f"Looked in {routes_file} and {where}.",
             url=url,
-            hint="Add a recorded reply there, or turn off offline mode in settings.yaml.",
-        )
-
-
-class NoNetworkTransport(httpx.BaseTransport):
-    """Used when `offline: true` is set without fixtures: every request is refused."""
-
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
-        raise OfflineMiss(
-            f"Offline mode is on, so getmeajob did not fetch {request.url}.",
-            url=str(request.url),
-            hint="Set `offline: false` in settings.yaml to use the network.",
+            hint="Add a recorded reply there, or remove `fixtures` from settings.yaml.",
         )

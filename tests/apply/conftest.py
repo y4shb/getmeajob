@@ -1,7 +1,8 @@
 """Fixtures for the apply tests.
 
 - `ready_ws`: a copy of a demo workspace where both demo jobs have `ready` plans
-  (built once per session with the real CLI: init --demo, source, rank, plan, answer).
+  (built once per session with the real CLI: init --demo, source, rank, plan, answer;
+  planned again in the copy, so the plans match the copied files).
 - `use_forms(ws, greenhouse="captcha=1")`: point the demo form URLs at the local mock
   forms with a query-string variant.
 - `set_apply(ws, **values)`: change the `apply:` block of preferences.yaml.
@@ -29,6 +30,7 @@ ASHBY_URL = (
     "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000001/application"
 )
 ANSWER = "I like building reliable backend systems and the team works on problems I care about."
+SPONSORSHIP = "Will you now or in the future require sponsorship for employment visa status?"
 
 
 @pytest.fixture(scope="session")
@@ -40,7 +42,14 @@ def _template(tmp_path_factory: pytest.TempPathFactory) -> Path:
     todo = root.parent / "todo.yaml"
     todo.write_text(
         json.dumps(
-            {"by_company": {"examplecorp": {"Why do you want to join Example Corp?": ANSWER}}}
+            {
+                "by_company": {
+                    "examplecorp": {
+                        "Why do you want to join Example Corp?": ANSWER,
+                        SPONSORSHIP: "No",
+                    }
+                }
+            }
         ),
         encoding="utf-8",
     )
@@ -53,9 +62,7 @@ def _template(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def ready_ws(_template: Path, tmp_path: Path) -> Workspace:
     root = tmp_path / "ws"
     shutil.copytree(_template, root)
-    for path in (root / "data" / "plans").glob("*.json"):
-        text = path.read_text(encoding="utf-8").replace(str(_template), str(root))
-        path.write_text(text, encoding="utf-8")
+    assert main(["--home", str(root), "--quiet", "plan"]) == 0
     return Workspace(root)
 
 

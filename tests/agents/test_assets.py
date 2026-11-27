@@ -175,7 +175,7 @@ def test_policy_is_linked_from_skill_agents_md_and_every_command() -> None:
 def test_plugin_copies_match_the_canonical_files() -> None:
     pairs = [
         (ASSETS.policy, ASSETS.skill_dir / "POLICY.md"),
-        (ASSETS.answer_review, ASSETS.skill_dir / "answer-review.md"),
+        (AGENTS / "prompts" / "answer-review.md", ASSETS.skill_dir / "answer-review.md"),
     ]
     for canonical, copy in pairs:
         assert copy.read_bytes() == canonical.read_bytes(), f"{copy} differs from {canonical}"

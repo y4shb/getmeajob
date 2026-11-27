@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 from typing import TYPE_CHECKING, Any
 
-from getmeajob.errors import GetmeajobError
 from getmeajob.files import now_iso
 from getmeajob.models import Job, RankResult
 from getmeajob.rank.prefs import load_preferences
@@ -70,26 +69,9 @@ def _cmd_rank(args: argparse.Namespace, ctx: Context) -> int:
     return 0
 
 
-def find_job(ctx: Context, key: str) -> Job:
-    """The job with this key, or the one job whose key contains `key`."""
-    matches = JobStore(ctx.ws).matching(key)
-    if len(matches) == 1:
-        return matches[0]
-    if matches:
-        listed = ", ".join(j.key for j in matches[:5])
-        raise GetmeajobError(
-            f"'{key}' matches {len(matches)} jobs ({listed}).",
-            hint="Give more of the key so only one job matches.",
-        )
-    raise GetmeajobError(
-        f"No job with the key '{key}'.",
-        hint="Run `getmeajob rank --all` to see the keys, or `getmeajob source` to fetch jobs.",
-    )
-
-
 def _cmd_explain(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     prefs = load_preferences(ctx.ws)
     result = rank_job(job, job_text(ctx.ws, job), prefs, now_iso())
     if ctx.out.json_mode:

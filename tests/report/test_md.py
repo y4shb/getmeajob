@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from getmeajob.report.tracker_md import tracker_markdown, write_tracker_md
+from getmeajob.report.tracker_md import tracker_markdown
 from getmeajob.store import JobStore
 from getmeajob.track.snapshot import load_snapshot
 from getmeajob.workspace import Workspace
@@ -12,8 +12,7 @@ GH = "greenhouse:examplecorp:1001"
 
 
 def test_grouped_by_status_in_ladder_order(pipeline_ws: Workspace) -> None:
-    path = write_tracker_md(pipeline_ws, pipeline_ws.exports_dir / "tracker.md")
-    text = path.read_text(encoding="utf-8")
+    text = tracker_markdown(load_snapshot(pipeline_ws))
     headings = [line for line in text.splitlines() if line.startswith("## ")]
     assert headings == ["## shortlisted (2)", "## planned (1)", "## ready (1)"]
     assert text.count("| Company | Role | Score | Status | Link |") == 3

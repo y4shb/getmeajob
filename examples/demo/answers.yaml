@@ -1,8 +1,9 @@
 # Demo answers for Alex Example (synthetic).
-# One question is left open on purpose: "Why do you want to join Example Corp?"
-# The rules cannot answer it from the profile, so `getmeajob plan` marks that job
-# needs_answers. Run `getmeajob plan unknowns --stub todo.yaml`, fill it in, then
-# `getmeajob plan answer todo.yaml` to see the job become ready.
+# Two Example Corp questions are left open on purpose: "Why do you want to join
+# Example Corp?" and the sponsorship question, which names no country for a remote
+# job. The rules cannot answer them from the profile, so `getmeajob plan` marks that
+# job needs_answers. Run `getmeajob plan unknowns --stub answers-todo.yaml`, fill it
+# in, then `getmeajob plan answer answers-todo.yaml` to see the job become ready.
 
 global:
   "Preferred work arrangement": Hybrid

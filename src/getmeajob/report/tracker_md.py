@@ -5,14 +5,11 @@ Short on purpose, so a person can skim it and an agent can read it cheaply.
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from getmeajob.files import atomic_write_text, utc_text
+from getmeajob.files import utc_text
 from getmeajob.report.rows import TrackerRow, tracker_rows
 from getmeajob.textutil import truncate
-from getmeajob.track.snapshot import Snapshot, load_snapshot
+from getmeajob.track.snapshot import Snapshot
 from getmeajob.track.status import LADDER, MEANING, counts_in_ladder_order, nonzero
-from getmeajob.workspace import Workspace
 
 CELL_CHARS = 60
 
@@ -58,9 +55,3 @@ def tracker_markdown(snap: Snapshot, rows: list[TrackerRow] | None = None) -> st
             cells = [_cell(row.company), _cell(row.role), score, row.status, _link(row.job_link)]
             lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
-
-
-def write_tracker_md(ws: Workspace, path: Path) -> Path:
-    """Write the Markdown tracker to `path` and return it."""
-    atomic_write_text(path, tracker_markdown(load_snapshot(ws)))
-    return path

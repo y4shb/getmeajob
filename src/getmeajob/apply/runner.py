@@ -1,14 +1,6 @@
-"""`run_apply`: fill planned forms in one of three modes, one job at a time.
+"""`run_apply`: fill planned forms one job at a time, in dry, hold or submit mode.
 
-- dry: fill and screenshot. Never clicks Submit.
-- hold: a visible window. Fill, click Submit once only with `click_submit`, then wait
-  for the human to finish (fix a field, type the emailed code) or close the window.
-- submit: only for boards listed in `apply.submit_boards`. Fill, click Submit once,
-  then read the result (success, emailed code, bot check, validation errors).
-
-Every job gets a fresh browser context. A closed window or a crashed page is recorded
-for that job (closed_by_user in a hold run, else error) and the run goes on. Each
-attempt adds one ledger entry; skipped jobs are reported but not written to the ledger.
+Submit is clicked at most once per job; every attempt adds one ledger entry.
 """
 
 from __future__ import annotations
@@ -22,14 +14,16 @@ from typing import TYPE_CHECKING
 
 from getmeajob.apply import policy
 from getmeajob.apply.forms import form_target, is_local
-from getmeajob.apply.guards import captcha_in, email_code_in, hard_stop, scan_page
+from getmeajob.apply.guards import PageScan, captcha_in, email_code_in, hard_stop, scan_page
 from getmeajob.apply.record import Outcome, make_entry, new_run_id, write_attempt
 from getmeajob.errors import GetmeajobError
 from getmeajob.models import ApplyMode, ApplyStatus, LedgerEntry, Plan
+from getmeajob.plan.planner import PlanInputs, plan_is_current
 from getmeajob.plan.plans import all_plans, load_plan
-from getmeajob.plan.profile import Profile, load_profile
+from getmeajob.plan.profile import Profile
 from getmeajob.settings import Settings, load_settings
-from getmeajob.store import Ledger, StatusLog, now_iso
+from getmeajob.sources.registry import ATS_FOR_FORMS
+from getmeajob.store import JobStore, Ledger, StatusLog, now_iso
 from getmeajob.workspace import Workspace, key_to_filename
 
 if TYPE_CHECKING:
@@ -38,8 +32,7 @@ if TYPE_CHECKING:
     from getmeajob.apply.base import Filler, FillReport
     from getmeajob.apply.browser import BrowserSession
 
-FORM_ATS = ("greenhouse", "ashby")
-HumanWait = Callable[["Page", float], ApplyStatus]
+HumanWait = Callable[["Page", float, PageScan], ApplyStatus]
 Notify = Callable[[str], None]
 
 
@@ -86,7 +79,7 @@ def _select(
     ws: Workspace, keys: Sequence[str] | None, mode: ApplyMode, run_id: str
 ) -> tuple[list[Plan], list[LedgerEntry]]:
     if keys is None:
-        return [p for p in all_plans(ws) if p.ats in FORM_ATS], []
+        return [p for p in all_plans(ws) if p.ats in ATS_FOR_FORMS], []
     plans: list[Plan] = []
     missing: list[LedgerEntry] = []
     for key in dict.fromkeys(keys):
@@ -126,7 +119,7 @@ class _Attempt:
         if self.session is None:
             from getmeajob.apply.browser import BrowserSession
 
-            local = self.settings.fixtures is not None or self.settings.offline
+            local = self.settings.fixtures is not None
             self.session = BrowserSession(headed=self.headed, local_only=local)
         return self.session
 
@@ -167,7 +160,8 @@ class _Attempt:
         context = page = None
         try:
             context, page = session.new_page()
-            return self._steps(page, plan, filler, target)
+            outcome, flag = self._steps(page, plan, filler, target)
+            return self._after_click(outcome), flag
         except error_cls as exc:
             return self._after_click(self._broken(page, exc)), self.mode == ApplyMode.hold
         except GetmeajobError as exc:
@@ -181,9 +175,9 @@ class _Attempt:
             session.close_context(context)
 
     def _after_click(self, outcome: Outcome) -> Outcome:
-        """An error after the Submit click may hide a sent application: record it as
-        awaiting_human, so no later run clicks Submit again before the human checks."""
-        if not self.clicked or outcome.status != ApplyStatus.error:
+        """Anything but a confirmation after the Submit click may hide a sent application:
+        record it as awaiting_human, so no later run clicks Submit again."""
+        if not self.clicked or outcome.status == ApplyStatus.submitted:
             return outcome
         detail = f"Submit was clicked once, then: {outcome.detail}"
         return replace(outcome, status=ApplyStatus.awaiting_human, detail=detail)
@@ -229,6 +223,7 @@ class _Attempt:
         if stop is not None:
             return stop, False
         notes = filler.prepare(page)
+        before_fill = scan_page(page)
         report = filler.fill(page, plan, self.profile, self.ws)
         self.partial.problems = list(report.problems)
         seen = captcha_in(scan_page(page))
@@ -251,10 +246,16 @@ class _Attempt:
             filler.submit(page)  # the one and only click
             status, detail = watch_after_submit(page, before)
             return self._outcome(page, plan, status, detail), False
-        return self._hold(page, plan, filler, report, filled), True
+        return self._hold(page, plan, filler, report, filled, before_fill), True
 
     def _hold(
-        self, page: Page, plan: Plan, filler: Filler, report: FillReport, filled: str
+        self,
+        page: Page,
+        plan: Plan,
+        filler: Filler,
+        report: FillReport,
+        filled: str,
+        before_fill: PageScan,
     ) -> Outcome:
         from getmeajob.apply.watch import wait_for_human
 
@@ -284,7 +285,7 @@ class _Attempt:
             f"code. Waiting up to {self.hold_timeout:g} s; closing the window skips this job."
         )
         self.notify(" ".join(lines))
-        status = (self.human or wait_for_human)(page, self.hold_timeout)
+        status = (self.human or wait_for_human)(page, self.hold_timeout, before_fill)
         detail = {
             ApplyStatus.submitted: "you finished it in the window",
             ApplyStatus.closed_by_user: "the window was closed before the application was finished",
@@ -300,7 +301,7 @@ class _Attempt:
                     ApplyStatus.needs_email_code,
                     "the emailed-code step was still open",
                 )
-        if clicked:
+        if clicked and status == ApplyStatus.submitted:
             detail += " (getmeajob clicked Submit once)"
         shot = self._shot(page, plan, status) if not page.is_closed() else None
         return Outcome(status, detail, list(report.problems), shot or prefill)
@@ -321,8 +322,9 @@ def run_apply(
     """Apply to planned jobs (all stored plans for Greenhouse and Ashby when `keys` is
     None). Returns one entry per job looked at; attempts are also written to the ledger.
 
-    `wait_for_human(page, timeout)` replaces the human in a hold run (tests, embedding);
-    with it, a hold run may run headless. `notify` receives the hold-run instructions.
+    `wait_for_human(page, timeout, before_fill)` replaces the human in a hold run (tests,
+    embedding); with it, a hold run may run headless. `notify` receives the hold-run
+    instructions.
     """
     ws = ws.require()
     mode = ApplyMode(mode)
@@ -335,12 +337,17 @@ def run_apply(
         policy.require_opt_in(plans, prefs)
     history = Ledger(ws).entries()
     tracker = StatusLog(ws)
-    offline = settings.fixtures is not None or settings.offline
+    jobs = JobStore(ws).load()
+    inputs: PlanInputs | None = None
+    offline = settings.fixtures is not None
     attempt: _Attempt | None = None
     attempted = 0
     try:
         for plan in plans:
-            skip = policy.skip_reason(plan, mode, prefs, history, tracker)
+            inputs = inputs or PlanInputs.load(ws)
+            job = jobs.get(plan.job_key)
+            stale = not plan_is_current(ws, plan, job, inputs)
+            skip = policy.skip_reason(plan, mode, prefs, history, tracker, job, stale)
             if skip is not None:
                 results.append(make_entry(ws, plan, mode, Outcome(*skip), run_id))
                 continue
@@ -350,7 +357,7 @@ def run_apply(
                 attempt = _Attempt(
                     ws,
                     settings,
-                    load_profile(ws),
+                    inputs.profile,
                     mode,
                     headed=headed,
                     click_submit=click_submit,
@@ -359,7 +366,7 @@ def run_apply(
                     notify=notify or (lambda _: None),
                 )
             elif not offline:
-                time.sleep(random.uniform(4.0, 8.0))  # a pause between real jobs
+                time.sleep(random.uniform(4.0, 8.0))
             attempted += 1
             outcome, flag = attempt.run(plan)
             entry = make_entry(ws, plan, mode, outcome, run_id)

@@ -2,8 +2,10 @@
 
 Order of attempts: exact (after normalising), yes/no/decline synonyms, unique prefix,
 unique word containment, year ranges, then a strict fuzzy match. Each step that finds
-more than one candidate stops with "ambiguous": the matcher refuses to guess. When
-nothing fits it returns no option and a reason. It never falls back to the first option.
+more than one candidate stops with "ambiguous": the matcher refuses to guess. A prefix,
+containment or fuzzy hit never pairs a negated text ("not", "no", "decline") with one
+that is not. When nothing fits it returns no option and a reason. It never falls back
+to the first option.
 """
 
 from __future__ import annotations
@@ -55,6 +57,7 @@ _UP_STRICT = re.compile(r"\b(more than|over|above|greater than|beyond)\b")
 _DOWN = re.compile(r"\bor (less|fewer)\b|\bup to\b|\bat most\b|\bmaximum\b")
 _DOWN_STRICT = re.compile(r"\b(less than|under|below|fewer than)\b|<")
 _ZERO = re.compile(r"^(none|no experience|no professional experience|0)$|\bno experience\b")
+_NEGATION = re.compile(r"\b(not|no|non|never|don'?t|without|decline)\b")
 FUZZY_MIN = 0.88
 FUZZY_MARGIN = 0.05
 
@@ -118,6 +121,12 @@ def _words(text: str) -> set[str]:
     return set(_WORD.findall(text))
 
 
+def _same_sense(want: str, option: str) -> bool:
+    """False when one of the two says "not", "no", "decline" and the like, and the other
+    does not ("I am a protected veteran" and "I am not a protected veteran")."""
+    return bool(_NEGATION.search(want)) == bool(_NEGATION.search(norm_label(option)))
+
+
 def match_option(
     desired: str | bool | int | float, options: Sequence[str], *, kind: str = "text"
 ) -> MatchResult:
@@ -151,18 +160,15 @@ def match_option(
     if want in YES or want in NO or want in DECLINE:
         side = "yes" if want in YES else "no" if want in NO else "decline"
         return _by_polarity(side, labels, what)
-    if len(want) >= 3:
-        hit = _single([o for o, n in normed if n.startswith(want)], "prefix", what)
-        if hit is not None:
-            return hit
     want_words = _words(want)
+    steps = [("prefix", [o for o, n in normed if len(want) >= 3 and n.startswith(want)])]
     if want_words:
-        hit = _single([o for o, n in normed if want_words <= _words(n)], "contains", what)
-        if hit is not None:
-            return hit
+        steps.append(("contains", [o for o, n in normed if want_words <= _words(n)]))
         inside = [o for o, n in normed if _words(n) and _words(n) <= want_words and len(n) >= 3]
-        hit = _single(inside, "contains", what)
-        if hit is not None:
+        steps.append(("contains", inside))
+    for method, found in steps:
+        hit = _single(found, method, what)
+        if hit is not None and (hit.option is None or _same_sense(want, hit.option)):
             return hit
     return _fuzzy(want, normed, what)
 
@@ -175,7 +181,7 @@ def _fuzzy(want: str, normed: list[tuple[str, str]], what: str) -> MatchResult:
     )
     best, best_label = scored[0]
     second = scored[1][0] if len(scored) > 1 else 0.0
-    if best >= FUZZY_MIN and best - second >= FUZZY_MARGIN:
+    if best >= FUZZY_MIN and best - second >= FUZZY_MARGIN and _same_sense(want, best_label):
         return MatchResult(best_label, "fuzzy", f"close match for {what} ({best:.2f})")
     return MatchResult(
         None,

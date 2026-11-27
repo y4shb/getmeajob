@@ -16,16 +16,10 @@ import re
 from playwright.sync_api import Page
 
 from getmeajob.apply.base import FillReport, click_submit, missing_required
-from getmeajob.apply.widgets import (
-    ashby_boolean,
-    ashby_choice,
-    fill_text,
-    location_typeahead,
-    quote_attr,
-    safely,
-    upload_file,
-)
+from getmeajob.apply.fields import click, fill_text, quote_attr, safely, upload_file
+from getmeajob.apply.widgets import ashby_boolean, ashby_choice, location_typeahead
 from getmeajob.models import Plan, PlannedAnswer, QuestionType
+from getmeajob.plan.answering import allowed_file
 from getmeajob.plan.profile import Profile
 from getmeajob.workspace import Workspace
 
@@ -65,8 +59,7 @@ def dismiss_cookie_banner(page: Page) -> str | None:
         button = page.locator(BANNERS).get_by_role("button", name=COOKIE_CHOICE)
         if button.count() == 0 or not button.first.is_visible():
             return None
-        button.first.click()
-        return "declined optional cookies"
+        return click(button.first) or "declined optional cookies"
 
     return safely(page, act)
 
@@ -87,11 +80,15 @@ class AshbyFiller:
         answers = [a for a in plan.answers if a.value not in (None, "", [])]
         files = [a for a in answers if a.type == QuestionType.file]
         for answer in files:
-            report.add(
-                answer.question_id,
-                answer.label,
-                upload_file(page, _sel(answer.question_id), str(answer.value)),
-            )
+            path, problem = allowed_file(ws, profile, str(answer.value))
+            if path:
+                report.add(
+                    answer.question_id,
+                    answer.label,
+                    upload_file(page, _sel(answer.question_id), path),
+                )
+            else:
+                report.add(answer.question_id, answer.label, problem)
         if files:
             page.wait_for_timeout(400 if self.fast else 2500)
         for answer in answers:

@@ -7,6 +7,8 @@ Modes (default with no mode flag: --tree --history):
   --tree        tracked files plus untracked files that are not ignored
   --history     every blob reachable from any ref (each once), every commit and tag
                 message, every author, committer and tagger, every ref name
+  --all-objects --history plus every object in the object database, reachable or not,
+                and everything the reflog still points at
   --staged      the blobs in the index and the configured git identity (pre-commit)
   --path DIR    walk a folder without git (skips .git, .venv, caches, node_modules)
 
@@ -417,13 +419,20 @@ def scan_tree(sc: Scanner, root: Path) -> None:
             sc.file(path, rel)
 
 
-def scan_history(sc: Scanner, root: Path, *, skip_identity: bool = False) -> None:
+def scan_history(
+    sc: Scanner, root: Path, *, skip_identity: bool = False, all_objects: bool = False
+) -> None:
     allowed_ident = local_identity(root)
     paths: dict[str, str] = {}
-    for line in git(root, "rev-list", "--objects", "--all").decode("utf-8", "replace").splitlines():
+    revs = ["rev-list", "--objects", "--all", *(["--reflog"] if all_objects else [])]
+    for line in git(root, *revs).decode("utf-8", "replace").splitlines():
         sha, _, path = line.partition(" ")
         if sha and sha not in paths:
             paths[sha] = path
+    if all_objects:
+        listing = git(root, "cat-file", "--batch-all-objects", "--batch-check=%(objectname)")
+        for sha in listing.decode().split():
+            paths.setdefault(sha, "")
     for path in sorted({p for p in paths.values() if p}):
         sc.name(path, lambda s, p=path: f"{p}:{s}@history")
     for ref in git(root, "for-each-ref", "--format=%(refname)").decode().splitlines():
@@ -441,7 +450,7 @@ def scan_history(sc: Scanner, root: Path, *, skip_identity: bool = False) -> Non
             short = sha[:7]
             if kind == "blob":
                 sc.blobs += 1
-                where = lambda s, p=paths[sha], h=short: f"{p}:{s}@{h}"  # noqa: E731
+                where = lambda s, p=paths[sha] or "(no path)", h=short: f"{p}:{s}@{h}"  # noqa: E731
                 if size > MAX_BYTES:
                     sc._add("large-file", where("(size)"), f"{size / 1e6:.1f} MB")
                     continue
@@ -540,6 +549,9 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     p.add_argument("--tree", action="store_true", help="tracked and untracked-not-ignored files")
     p.add_argument("--history", action="store_true", help="all reachable blobs, commits, refs")
+    p.add_argument(
+        "--all-objects", action="store_true", help="--history plus unreachable and reflog objects"
+    )
     p.add_argument("--staged", action="store_true", help="index blobs and git identity")
     p.add_argument("--path", metavar="DIR", help="walk a folder without git")
     p.add_argument("--repo", metavar="DIR", default=".", help="repository folder (default .)")
@@ -552,9 +564,9 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="do not check commit author/committer identities (CI; commit metadata is public)",
     )
     args = p.parse_args(argv)
-    if args.path and (args.tree or args.history or args.staged):
-        p.error("--path cannot be combined with --tree, --history or --staged")
-    if not (args.path or args.tree or args.history or args.staged):
+    if args.path and (args.tree or args.history or args.all_objects or args.staged):
+        p.error("--path cannot be combined with --tree, --history, --all-objects or --staged")
+    if not (args.path or args.tree or args.history or args.all_objects or args.staged):
         args.tree = args.history = True
     return args
 
@@ -581,8 +593,8 @@ def run(args: argparse.Namespace) -> int:
         scan_path(sc, root)
     if args.tree:
         scan_tree(sc, root)
-    if args.history:
-        scan_history(sc, root, skip_identity=args.skip_identity)
+    if args.history or args.all_objects:
+        scan_history(sc, root, skip_identity=args.skip_identity, all_objects=args.all_objects)
     if args.staged:
         scan_staged(sc, root, skip_identity=args.skip_identity)
 

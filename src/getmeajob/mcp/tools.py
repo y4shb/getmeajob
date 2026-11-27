@@ -13,9 +13,10 @@ from typing import Any, TypeAlias
 from getmeajob.errors import ConfigError, GetmeajobError
 from getmeajob.http import client_for
 from getmeajob.mcp.text import MAX_CHARS, bounded, clip, guarded
-from getmeajob.models import PlanStatus, QueueKind
+from getmeajob.models import PlanStatus, QuestionType, QueueKind
 from getmeajob.plan.overrides import merge_answers
 from getmeajob.plan.planner import plan_run
+from getmeajob.plan.plans import all_plans
 from getmeajob.plan.unknowns import collect_unknowns, review_table
 from getmeajob.queue.view import queue_view
 from getmeajob.rank.score import job_text, rank_all
@@ -190,7 +191,24 @@ class Tools:
             raise GetmeajobError(
                 "Give company or job_key, not both.", hint="Leave both empty for every job."
             )
-        table = {label.strip(): value for label, value in answers.items()}
+        plans = all_plans(ws)
+        files = {
+            norm_label(a.label) for p in plans for a in p.answers if a.type == QuestionType.file
+        }
+        files |= {
+            norm_label(u.label) for p in plans for u in p.unknowns if u.type == QuestionType.file
+        }
+        refused = [label for label in answers if norm_label(label) in files]
+        if refused:
+            raise GetmeajobError(
+                f"Refused: {_short(refused[0], 60)} asks for a file. Nothing was saved.",
+                hint="Files come from files.resume and files.cover_letter in profile.yaml; "
+                "the user sets those.",
+            )
+        table = {
+            label.strip(): {"value": value, "needs_review": True, "source": "agent"}
+            for label, value in answers.items()
+        }
         if job_key:
             data: dict[str, Any] = {"by_job": {job_key: table}}
             scope = f"for job {job_key}"
@@ -211,6 +229,10 @@ class Tools:
                 "Not open questions (they now override the rule answer wherever a form asks "
                 "them): " + ", ".join(_short(label, 60) for label in other[:5])
             )
+        lines.append(
+            "They wait for the user's review: a submit run refuses them until the user runs "
+            "`getmeajob plan approve --all`."
+        )
         lines.append("next: getmeajob_plan, then getmeajob_review")
         return clip("\n".join(lines))
 

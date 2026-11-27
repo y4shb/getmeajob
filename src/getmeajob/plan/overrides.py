@@ -7,8 +7,8 @@ Layout:
 
 The most specific answer wins: by_job (question id, then label), by_company, global.
 Labels are compared after normalising (case, "*", "(required)", trailing "?" ignored).
-Blank values count as "not answered yet". Drafts are stored as
-`{value: ..., needs_review: true, source: draft}` until you approve them.
+Blank values count as "not answered yet". Drafts and answers saved by an agent are stored
+as `{value: ..., needs_review: true, source: draft | agent}` until you approve them.
 """
 
 from __future__ import annotations
@@ -30,8 +30,9 @@ HEADER = """\
 # Your own answers to form questions. The most specific answer wins:
 # by_job (question id or label), then by_company (board slug), then global (label).
 # `getmeajob plan unknowns --stub FILE` writes open questions to fill in, and
-# `getmeajob plan answer FILE` merges them here. Drafts carry needs_review: true
-# until you check them and run `getmeajob plan approve KEY`.
+# `getmeajob plan answer FILE` merges them here. Drafts and answers saved by an agent
+# carry needs_review: true until you check them and run `getmeajob plan approve KEY`
+# (or `getmeajob plan approve --all`).
 """
 
 
@@ -152,15 +153,20 @@ def write_answers(ws: Workspace, data: Mapping[str, Any]) -> None:
     dump_yaml(ws.answers_path, dict(data), header=HEADER + "\n", width=100)
 
 
-def approve_job(ws: Workspace, job_key: str) -> int:
-    """Mark the drafted answers of one job as reviewed. Returns how many changed."""
+def approve_job(ws: Workspace, job_key: str | None) -> int:
+    """Mark the answers waiting for review as reviewed: one job's `by_job` entries, or
+    with `job_key` None every entry in every section. Returns how many changed."""
     data = answers_from_data(load_yaml(ws.answers_path, required=False)).raw()
-    table = data["by_job"].get(job_key) or {}
+    if job_key is None:
+        tables = [data["global"], *data["by_company"].values(), *data["by_job"].values()]
+    else:
+        tables = [data["by_job"].get(job_key) or {}]
     changed = 0
-    for key, entry in table.items():
-        if isinstance(entry, Mapping) and entry.get("needs_review") is True:
-            table[key] = {**entry, "needs_review": False}
-            changed += 1
+    for table in tables:
+        for key, entry in table.items():
+            if isinstance(entry, Mapping) and entry.get("needs_review") is True:
+                table[key] = {**entry, "needs_review": False}
+                changed += 1
     if changed:
         write_answers(ws, data)
     return changed

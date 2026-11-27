@@ -16,8 +16,10 @@ import re
 import shlex
 import shutil
 from dataclasses import dataclass
+from importlib import metadata
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from getmeajob.demo import agents_dir
 from getmeajob.errors import GetmeajobError
@@ -28,7 +30,6 @@ PLUGIN_NAME = "getmeajob"
 MARKETPLACE_NAME = "getmeajob"
 SKILL_NAME = "getmeajob"
 FLAT_PREFIX = "getmeajob-"
-GITHUB_PLACEHOLDER = "<owner>/getmeajob"
 SKIP_NAMES = frozenset({".DS_Store", ".gitkeep", "Thumbs.db"})
 _PLUGIN_LINK = re.compile(r"/getmeajob:([a-z][a-z0-9-]*)")
 
@@ -58,10 +59,6 @@ class Assets:
     @property
     def policy(self) -> Path:
         return self.root / "POLICY.md"
-
-    @property
-    def answer_review(self) -> Path:
-        return self.root / "prompts" / "answer-review.md"
 
     def command_files(self) -> list[Path]:
         return sorted(p for p in self.commands_dir.glob("*.md") if p.name not in SKIP_NAMES)
@@ -133,10 +130,27 @@ def install_flat(assets: Assets, project: Path, *, force: bool = False) -> list[
     return written
 
 
+def repository() -> str:
+    """`owner/repo` from the Repository URL in the installed package's metadata."""
+    try:
+        urls = metadata.metadata("getmeajob").get_all("Project-URL") or []
+    except metadata.PackageNotFoundError:
+        urls = []
+    for entry in urls:
+        label, _, url = str(entry).partition(",")
+        path = urlsplit(url.strip()).path.strip("/").removesuffix(".git")
+        if label.strip().casefold() == "repository" and path.count("/") == 1:
+            return path
+    raise GetmeajobError(
+        "The installed getmeajob package does not name its repository.",
+        hint="Reinstall getmeajob, or run it from a full copy of the repository.",
+    )
+
+
 def plugin_commands(assets: Assets) -> list[str]:
     """The two shell commands that add the marketplace and install the plugin."""
     root = assets.marketplace_root()
-    source = shlex.quote(str(root)) if root is not None else GITHUB_PLACEHOLDER
+    source = shlex.quote(str(root)) if root is not None else repository()
     return [
         f"claude plugin marketplace add {source}",
         f"claude plugin install {PLUGIN_NAME}@{MARKETPLACE_NAME} --scope project",

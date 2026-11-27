@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
 
 from getmeajob.demo import examples_dir
 from getmeajob.models import ApplyMode, ApplyStatus
-from getmeajob.plan.profile import Profile
+from getmeajob.plan.plans import load_plan
+from getmeajob.plan.profile import Profile, load_profile
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import load_yaml
 
@@ -107,7 +109,7 @@ def test_dry_fills_all_and_never_submits(
 
 
 def test_react_select_no_match_is_problem(open_mock: Callable[..., Any]) -> None:
-    from getmeajob.apply.widgets import react_select
+    from getmeajob.apply.menus import react_select
 
     page = open_mock("greenhouse")
     problem = react_select(page, "question_2004", "Fifteen")
@@ -122,8 +124,8 @@ def test_react_select_no_match_is_problem(open_mock: Callable[..., Any]) -> None
 
 
 def test_education_repeater(open_mock: Callable[..., Any], profile: Profile) -> None:
+    from getmeajob.apply.repeater import fill_section as fill_repeater
     from getmeajob.apply.values import education_rows, employment_rows
-    from getmeajob.apply.widgets import fill_repeater
 
     page = open_mock("greenhouse")
     rows = education_rows(
@@ -167,3 +169,34 @@ def test_location_typeahead_requires_match(open_mock: Callable[..., Any], profil
     page = open_mock("greenhouse")
     problem = location_typeahead(page, selector, Profile(data=data))
     assert problem and "not guessing" in problem and _chosen(page, "candidate-location") == ""
+
+
+def test_untyped_add_another_is_never_clicked(
+    ready_ws: Workspace, open_mock: Callable[..., Any]
+) -> None:
+    from getmeajob.apply.greenhouse import GreenhouseFiller
+
+    plan = load_plan(ready_ws, GH)
+    assert plan is not None
+    page = open_mock("greenhouse", "untyped=1")  # "Add another" has no type, inside the form
+    report = GreenhouseFiller(fast=True).fill(page, plan, load_profile(ready_ws), ready_ws)
+    assert "employment: only 1 row(s) fit on this form" in report.notes
+    assert page.evaluate("window.__submitCount") == 0
+
+
+def test_file_outside_the_workspace_is_never_attached(
+    ready_ws: Workspace, open_mock: Callable[..., Any], tmp_path: Path
+) -> None:
+    from getmeajob.apply.greenhouse import GreenhouseFiller
+
+    secret = tmp_path / "secret.txt"
+    secret.write_text("synthetic", encoding="utf-8")
+    plan = load_plan(ready_ws, GH)
+    assert plan is not None
+    for answer in plan.answers:
+        if answer.question_id == "resume":
+            answer.value = str(secret)
+    page = open_mock("greenhouse")
+    report = GreenhouseFiller(fast=True).fill(page, plan, load_profile(ready_ws), ready_ws)
+    assert any(p.startswith("resume") and "outside the workspace" in p for p in report.problems)
+    assert page.evaluate("document.getElementById('resume').files.length") == 0

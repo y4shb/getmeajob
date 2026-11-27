@@ -1,12 +1,5 @@
-"""The one polite HTTP client every network call goes through.
-
-- timeouts (connect 10 s, read 25 s), retries on 429, 5xx and timeouts with backoff
-  and jitter, honouring Retry-After; never retries 404 or 410
-- a minimum interval between requests to the same host, and a small thread pool
-- a disk cache with a TTL and ETag / Last-Modified revalidation
-- stops at once on bot checks (`BotWallError`), never tries to get past them
-- optional robots.txt check for HTML pages (`RobotsDisallowed`)
-- `FixtureTransport` replays recorded files for offline demos and tests
+"""The one polite HTTP client every network call goes through: timeouts, retries,
+a per-host interval, a disk cache, bot-check stops, robots.txt and public hosts only.
 """
 
 from __future__ import annotations
@@ -18,7 +11,6 @@ import time
 import urllib.robotparser
 from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import Any, TypeVar
@@ -34,14 +26,18 @@ from getmeajob.errors import (
 )
 from getmeajob.files import write_json_atomic
 from getmeajob.httputil import (
+    Response,
     cache_key,
     host_of,
     looks_like_bot_wall,
     parse_retry_after,
+    private_host,
     read_cache_entry,
+    read_response,
+    response_from_entry,
     write_cache_entry,
 )
-from getmeajob.replay import FixtureTransport, NoNetworkTransport
+from getmeajob.replay import FixtureTransport
 from getmeajob.settings import Settings, load_settings
 from getmeajob.workspace import Workspace
 
@@ -58,28 +54,9 @@ R = TypeVar("R")
 
 USER_AGENT = f"getmeajob/{__version__} (+personal job search tool)"
 MAX_BACKOFF = 60.0
-_CACHE_HEADERS = ("content-type", "etag", "last-modified")
-
-
-@dataclass
-class Response:
-    url: str
-    status: int
-    headers: dict[str, str]
-    text: str
-    from_cache: bool = False
-
-    def json(self) -> Any:
-        try:
-            return json.loads(self.text)
-        except json.JSONDecodeError as exc:
-            raise HttpError(
-                f"{host_of(self.url) or self.url} sent a reply that is not valid JSON "
-                f"({exc.msg} at line {exc.lineno}).",
-                url=self.url,
-                status=self.status,
-                hint="The site may be down or may have changed. Try again later.",
-            ) from exc
+MAX_REDIRECTS = 5
+MAX_BODY_BYTES = 10 * 1024 * 1024
+_ROBOTS = "getmeajob_robots"
 
 
 class HttpClient:
@@ -108,11 +85,14 @@ class HttpClient:
         self.clock: Callable[[], float] = time.monotonic
         self._sleep = sleep
         self._rng = random.Random()
+        self._lookup = transport is None
         self._client = httpx.Client(
             timeout=httpx.Timeout(timeout, connect=connect_timeout),
             transport=transport,
             headers={"User-Agent": self.user_agent},
             follow_redirects=True,
+            max_redirects=MAX_REDIRECTS,
+            event_hooks={"request": [self._check_hop]},
         )
         self._lock = threading.Lock()
         self._host_locks: dict[str, threading.Lock] = {}
@@ -147,10 +127,11 @@ class HttpClient:
         check_robots: bool = False,
     ) -> Response:
         """GET `url`. With `ttl` (seconds) and a cache folder, a fresh cached copy is used
-        and an older one is revalidated. `check_robots=True` is for HTML pages."""
-        if check_robots:
-            self._check_robots(url)
-        return self._cached("GET", url, params=params, headers=headers, body=b"", ttl=ttl)
+        and an older one is revalidated. `check_robots=True` is for HTML pages: robots.txt
+        is checked for the URL and for every redirect."""
+        return self._cached(
+            "GET", url, params=params, headers=headers, body=b"", ttl=ttl, robots=check_robots
+        )
 
     def post_json(
         self,
@@ -194,6 +175,7 @@ class HttpClient:
         headers: Mapping[str, str] | None,
         body: bytes,
         ttl: float | None,
+        robots: bool = False,
     ) -> Response:
         path = None if ttl is None else self._cache_path(cache_key(method, url, params, body))
         entry = read_cache_entry(path) if path is not None else None
@@ -201,40 +183,21 @@ class HttpClient:
         if entry is not None and ttl is not None:
             age = time.time() - float(entry["fetched_at"])
             if age < ttl:
-                return self._from_entry(entry)
+                return response_from_entry(entry)
             if entry.get("etag"):
                 send_headers["If-None-Match"] = str(entry["etag"])
             if entry.get("last_modified"):
                 send_headers["If-Modified-Since"] = str(entry["last_modified"])
-        resp = self._send(method, url, params=params, headers=send_headers, body=body)
-        if path is not None and entry is not None and resp.status_code == 304:
+        result = self._send(
+            method, url, params=params, headers=send_headers, body=body, robots=robots
+        )
+        if path is not None and entry is not None and result.status == 304:
             entry["fetched_at"] = time.time()
             write_json_atomic(path, entry)
-            return self._from_entry(entry)
-        result = Response(
-            url=str(resp.url),
-            status=resp.status_code,
-            headers={k.lower(): v for k, v in resp.headers.items()},
-            text=resp.text,
-        )
-        if path is not None and resp.status_code == 200:
+            return response_from_entry(entry)
+        if path is not None and result.status == 200:
             write_cache_entry(path, result.url, result.status, result.headers, result.text)
         return result
-
-    @staticmethod
-    def _from_entry(entry: Mapping[str, Any]) -> Response:
-        headers = {
-            name: str(entry[name.replace("-", "_")])
-            for name in _CACHE_HEADERS
-            if entry.get(name.replace("-", "_"))
-        }
-        return Response(
-            url=str(entry.get("url", "")),
-            status=int(entry.get("status", 200)),
-            headers=headers,
-            text=str(entry.get("text", "")),
-            from_cache=True,
-        )
 
     # --------------------------------------------------------------- sending
 
@@ -255,6 +218,18 @@ class HttpClient:
     def _backoff(self, attempt: int) -> float:
         return min(MAX_BACKOFF, self.backoff_base * 2.0**attempt) + self._rng.uniform(0, 0.5)
 
+    def _check_hop(self, request: httpx.Request) -> None:
+        """Runs before every request, redirects included."""
+        url = str(request.url)
+        if private_host(request.url.host, lookup=self._lookup):
+            raise HttpError(
+                f"getmeajob does not fetch {url}: it points at this computer or a private network.",
+                url=url,
+                hint="getmeajob only reads public sites. Check the link, or open it yourself.",
+            )
+        if request.extensions.get(_ROBOTS):
+            self._check_robots(url)
+
     def _send(
         self,
         method: str,
@@ -263,7 +238,8 @@ class HttpClient:
         params: Mapping[str, Any] | None,
         headers: Mapping[str, str],
         body: bytes,
-    ) -> httpx.Response:
+        robots: bool = False,
+    ) -> Response:
         host = host_of(url) or url
         attempts = self.retries + 1
         problem = ""
@@ -272,9 +248,15 @@ class HttpClient:
             self._throttle(host)
             delay = self._backoff(attempt)
             try:
-                resp = self._client.request(
-                    method, url, params=params, headers=headers, content=body or None
-                )
+                with self._client.stream(
+                    method,
+                    url,
+                    params=params,
+                    headers=headers,
+                    content=body or None,
+                    extensions={_ROBOTS: True} if robots else None,
+                ) as stream:
+                    resp = read_response(stream, url, MAX_BODY_BYTES)
             except httpx.TimeoutException:
                 problem, status = "the request timed out", None
             except (httpx.NetworkError, httpx.RemoteProtocolError) as exc:
@@ -286,9 +268,8 @@ class HttpClient:
                     hint="Check that the address is right.",
                 ) from exc
             else:
-                code = resp.status_code
-                lowered = {k.lower(): v for k, v in resp.headers.items()}
-                if looks_like_bot_wall(code, lowered, resp.text):
+                code = resp.status
+                if looks_like_bot_wall(code, resp.headers, resp.text):
                     raise BotWallError(
                         f"{host} showed a bot check (HTTP {code}), so getmeajob stopped.",
                         url=url,
@@ -355,7 +336,7 @@ class HttpClient:
                 status=exc.status,
                 hint="Try again later, or open the page in your own browser.",
             ) from exc
-        if resp.status_code >= 400:
+        if resp.status >= 400:
             return None  # no robots.txt (or not readable by anyone): allowed
         parser = urllib.robotparser.RobotFileParser(robots_url)
         parser.parse(resp.text.splitlines())
@@ -364,7 +345,7 @@ class HttpClient:
 
 def client_for(ws: Workspace, settings: Settings | None = None) -> HttpClient:
     """The HTTP client for a workspace. With fixtures set it replays them (no cache, no
-    waiting between requests); with `offline: true` alone every request is refused."""
+    waiting between requests)."""
     settings = settings if settings is not None else load_settings(ws)
     if settings.fixtures is not None:
         return HttpClient(
@@ -373,14 +354,6 @@ def client_for(ws: Workspace, settings: Settings | None = None) -> HttpClient:
             retries=settings.retries,
             min_interval=0.0,
             transport=FixtureTransport(settings.fixtures),
-            max_workers=settings.max_workers,
-        )
-    if settings.offline:
-        return HttpClient(
-            cache_dir=None,
-            retries=0,
-            min_interval=0.0,
-            transport=NoNetworkTransport(),
             max_workers=settings.max_workers,
         )
     return HttpClient(

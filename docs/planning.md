@@ -5,8 +5,8 @@
 ## The short version
 
 1. `getmeajob plan` plans your shortlisted jobs (or `getmeajob plan KEY ...` for chosen ones).
-2. `getmeajob plan unknowns --stub todo.yaml` writes the open questions to a file, once per question.
-3. Fill in `todo.yaml` with true answers, then run `getmeajob plan answer todo.yaml`.
+2. `getmeajob plan unknowns --stub answers-todo.yaml` writes the open questions to a file, once per question.
+3. Fill in `answers-todo.yaml` with true answers, then run `getmeajob plan answer answers-todo.yaml`.
 4. Run `getmeajob plan` again. Jobs with every required question answered become `ready`.
 5. `getmeajob plan review` shows one table of every answer that will be sent.
 
@@ -35,13 +35,15 @@ These hold for every plan and each has a test.
 
 - A missing profile field gives an unknown, never a guess.
 - Choice questions never fall back to the first option. If two options both fit ("Yes, I will require sponsorship" and "Yes, I have sponsorship"), the matcher refuses and says why.
+- A near match never flips the meaning: "I am a protected veteran" never picks "I am not a protected veteran".
 - Questions about AI or automated tools are never answered by a rule. Text in a label or description telling candidates not to use bots, automated tools or AI agents blocks the plan.
 - Consent boxes are ticked only when `consent.privacy_notice: true` is in your profile.
 - Voluntary self-ID questions (gender, race, veteran, disability) use your profile value if you set one, otherwise the "decline" option. Without a decline option, a required one becomes unknown and an optional one is left blank.
 
 A few more cautious choices:
 
-- Work permit and sponsorship answers use only the countries in `eligibility.authorized_countries` and `eligibility.needs_sponsorship_countries`. When the question names no country, the job location is used; for a remote job, your home country.
+- Work permit and sponsorship answers use only the countries in `eligibility.authorized_countries` and `eligibility.needs_sponsorship_countries`. When the question names no country, the job location is used. When that names no country either, as with most remote jobs, the question stays open for you.
+- A file answer must sit inside the workspace, or be your `files.resume` or `files.cover_letter`. Any other path is refused when planning and again when filling.
 - "Have you worked for X?" compares whole company names, so "Initech Example Ltd" does not count as "Example Corp".
 - Years questions about one skill ("years with Kubernetes") stay unknown. Only total experience comes from `experience.total_years`.
 - Pay questions are left blank when optional. Current pay is shared only with `compensation.share_current: true`.
@@ -99,6 +101,8 @@ The full list of kinds is `KINDS` in `src/getmeajob/plan/rules.py`. A bad patter
 - Only `text` and `textarea` unknowns that are not factual are drafted. Questions about legal status, pay, self-ID, years, dates, contact details or AI are never drafted.
 - The prompt holds the question, the job title and company, the start of the job description, and a few profile facts. The model must reply `ASK_HUMAN` if those facts are not enough.
 - Every draft is saved under `by_job` with `needs_review: true`. Read it, edit `answers.yaml` if needed, then run `getmeajob plan approve KEY`. Submitting refuses jobs with unreviewed drafts.
+- A reply cut off at the token limit is not saved; the question stays open for you.
+- Answers an agent saves through the MCP server are marked `needs_review: true` and `source: agent` too. `getmeajob plan approve --all` approves every waiting answer, in every section of `answers.yaml`.
 - `--budget N` caps the estimated tokens (characters divided by 4). Replies are cached in `cache/llm/`, so running it again costs nothing.
 
 Providers:

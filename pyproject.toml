@@ -35,8 +35,8 @@ Issues = "https://github.com/y4shb/getmeajob/issues"
 
 [project.optional-dependencies]
 browser = ["playwright>=1.45"]
-llm = ["anthropic>=0.40"]
-mcp = ["mcp>=1.2"]
+llm = ["anthropic>=2.14"]
+mcp = ["mcp>=2"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "types-PyYAML"]
 all = ["getmeajob[browser,llm,mcp]"]
 
@@ -54,12 +54,15 @@ packages = ["src/getmeajob"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/src",
-    "/examples",
+    "/.claude-plugin",
     "/agents",
     "/config",
+    "/docs",
+    "/examples",
     "/scripts",
     "/tests",
     "/LICENSE",
+    "/NOTICE",
     "/pyproject.toml",
 ]
 

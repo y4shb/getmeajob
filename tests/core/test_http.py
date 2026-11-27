@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import socket
 from collections.abc import Callable
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 
 from getmeajob.errors import BotWallError, HttpError, OfflineMiss, RobotsDisallowed
 from getmeajob.http import USER_AGENT, FixtureTransport, HttpClient, client_for
+from getmeajob.httputil import private_host
 from getmeajob.settings import Settings
 from getmeajob.workspace import Workspace
 
@@ -260,11 +262,80 @@ def test_fixture_transport_routes_then_path_then_miss(tmp_path: Path) -> None:
         client.get("https://boards-api.example.com/../../etc/passwd")
 
 
-def test_client_for_uses_fixtures_and_offline(tmp_ws: Workspace, tmp_path: Path) -> None:
+def test_client_for_uses_fixtures(tmp_ws: Workspace, tmp_path: Path) -> None:
     fixtures = tmp_path / "fx"
     (fixtures / "http" / "api.example.com").mkdir(parents=True)
     (fixtures / "http" / "api.example.com" / "ping.json").write_text('"pong"', encoding="utf-8")
-    with client_for(tmp_ws, Settings(fixtures=fixtures, offline=True)) as client:
+    with client_for(tmp_ws, Settings(fixtures=fixtures)) as client:
         assert client.get("https://api.example.com/ping").json() == "pong"
-    with client_for(tmp_ws, Settings(offline=True)) as client, pytest.raises(OfflineMiss):
-        client.get("https://api.example.com/ping")
+        with pytest.raises(OfflineMiss):
+            client.get("https://api.example.com/other")
+
+
+def test_refuses_private_addresses_and_redirects_to_them() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(302, headers={"location": "http://169.254.169.254/latest"})
+
+    with _client(handler, FakeSleep()) as client:
+        for url in ("http://127.0.0.1:8000/", "http://[::1]/", "http://10.0.0.8/x"):
+            with pytest.raises(HttpError, match="private network"):
+                client.get(url)
+        with pytest.raises(HttpError, match="private network"):
+            client.get("https://jobs.example.com/a")
+    assert seen == ["https://jobs.example.com/a"]  # nothing private was ever requested
+    assert not private_host("8.8.8.8", lookup=False)
+    assert not private_host("intranet.example.com", lookup=False)
+
+
+def test_a_name_that_resolves_to_a_private_address_is_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def lookup(*args: object, **kwargs: object) -> list[tuple[object, ...]]:
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.1.2.3", 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", lookup)
+    assert private_host("intranet.example.com", lookup=True)
+    real = HttpClient(retries=0, min_interval=0)  # the real transport, so names resolve
+    with real, pytest.raises(HttpError, match="private network"):
+        real.get("https://intranet.example.com/jobs")
+
+
+def test_robots_is_checked_on_every_redirect() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(f"{request.url.host}{request.url.path}")
+        if request.url.path == "/robots.txt":
+            closed = request.url.host == "other.example.org"
+            return httpx.Response(200, text="User-agent: *\nDisallow: /private\n" if closed else "")
+        if request.url.host == "jobs.example.com":
+            return httpx.Response(301, headers={"location": "https://other.example.org/private/1"})
+        return httpx.Response(200, text="ok")
+
+    with _client(handler, FakeSleep()) as client, pytest.raises(RobotsDisallowed):
+        client.get("https://jobs.example.com/job/1", check_robots=True)
+    assert "other.example.org/robots.txt" in seen
+    assert "other.example.org/private/1" not in seen
+
+
+def test_redirects_and_reply_size_are_capped(monkeypatch: pytest.MonkeyPatch) -> None:
+    hops: list[str] = []
+
+    def loop(request: httpx.Request) -> httpx.Response:
+        hops.append(request.url.path)
+        return httpx.Response(302, headers={"location": f"/r{len(hops)}"})
+
+    with _client(loop, FakeSleep()) as client, pytest.raises(HttpError, match="redirects"):
+        client.get("https://jobs.example.com/r0")
+    assert len(hops) == 6  # the first request and 5 redirects
+
+    monkeypatch.setattr("getmeajob.http.MAX_BODY_BYTES", 1000)
+    big = _client(lambda r: httpx.Response(200, content=b"x" * 1001), FakeSleep())
+    with big, pytest.raises(HttpError, match="stopped reading"):
+        big.get("https://jobs.example.com/big")
+    small = _client(lambda r: httpx.Response(200, content=b"x" * 1000), FakeSleep())
+    with small:
+        assert small.get("https://jobs.example.com/ok").text == "x" * 1000

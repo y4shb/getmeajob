@@ -79,3 +79,20 @@ def test_fuzzy_needs_margin_and_containment() -> None:
     )
     chosen, problems = match_many(["Python", "Cobol"], ["Python", "Go"])
     assert chosen == ["Python"] and len(problems) == 1
+
+
+def test_negation_never_matches_its_opposite() -> None:
+    veteran = [
+        "I identify as one or more of the classifications of protected veteran",
+        "I am not a protected veteran",
+        "I don't wish to answer",
+    ]
+    assert match_option("I am a protected veteran", veteran).option is None
+    assert match_option("I am not a protected veteran", veteran).option == veteran[1]
+    assert match_option("Not authorized", ["Authorized", "Pending"]).option is None
+    assert match_option("Authorized", ["Not authorized", "Pending"]).option is None
+    assert match_option("No sponsorship needed", ["Sponsorship needed", "Unsure"]).option is None
+    assert match_option("Sponsorship needed", ["No sponsorship needed"]).option is None
+    assert match_option("Not authorised", ["Not authorized", "Authorized"]).option == (
+        "Not authorized"  # a close spelling with the same sense still matches
+    )

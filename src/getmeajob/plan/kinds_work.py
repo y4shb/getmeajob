@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 
-from getmeajob.plan.countries import canonical, countries_in, is_remote
+from getmeajob.plan.countries import canonical, countries_in
 from getmeajob.plan.kinds_base import Ctx, answered, choose, is_number, missing_field, unknown
 from getmeajob.plan.options import polarity
 from getmeajob.plan.profile import is_blank
@@ -106,9 +106,6 @@ def _named_and_lists(ctx: Ctx) -> tuple[list[str], set[str], set[str], str]:
     if not named and ctx.job is not None:
         named = countries_in(ctx.job.location or "", extra)
         where = "the job location"
-        if not named and is_remote(ctx.job) and home:
-            named = [canonical(home)]
-            where = f"a remote job and your home country ({home})"
     return named, {canonical(c) for c in authorized}, {canonical(c) for c in needs}, where
 
 

@@ -16,6 +16,7 @@ from getmeajob.models import (
     ApplyMode,
     ApplyStatus,
     AppStatus,
+    Job,
     LedgerEntry,
     Plan,
     PlannedAnswer,
@@ -87,6 +88,16 @@ def test_duplicates_and_waiting_jobs() -> None:
     assert policy.duplicate_reason(plan, dry, later, None) is None
 
 
+def test_jobs_you_ruled_out_are_never_opened() -> None:
+    for status in ("skipped", "withdrawn", "rejected", "closed", "ghosted"):
+        assert f"tracked as {status}" in (policy.ruled_out(None, AppStatus(status)) or "")
+    assert policy.ruled_out(None, AppStatus.ready) is None
+    job = Job("greenhouse:examplecorp:1001", "greenhouse", "examplecorp", "1001", "E", "T", "u")
+    assert policy.ruled_out(job, None) is None
+    job.status = "closed"
+    assert policy.ruled_out(job, AppStatus.ready) == "the job is closed on the board"
+
+
 def test_cap_counts_sent_jobs_in_30_days_only() -> None:
     plan = _plan()
     prefs = policy.ApplyPrefs(per_company_cap=2)
@@ -124,11 +135,9 @@ def test_form_target_offline_mapping(tmp_path: Path) -> None:
     url = "https://jobs.ashbyhq.com/org/1/application"
     mapping = {url: "mock_forms/form.html?code=1"}
     (tmp_path / "fixtures" / "forms.json").write_text(json.dumps(mapping), encoding="utf-8")
-    settings = Settings(fixtures=tmp_path / "fixtures", offline=True)
+    settings = Settings(fixtures=tmp_path / "fixtures")
     target = form_target(url + "/", settings)
     assert target == mock.resolve().as_uri() + "?code=1"
     with pytest.raises(FormUnavailable, match="no mock form"):
         form_target("https://jobs.ashbyhq.com/org/2/application", settings)
-    with pytest.raises(FormUnavailable, match="offline"):
-        form_target(url, Settings(offline=True))
     assert form_target(url, Settings()) == url

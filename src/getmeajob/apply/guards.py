@@ -2,7 +2,9 @@
 
 One script collects what matters (visible text, iframes, password and code inputs,
 error messages) and small functions read it: CAPTCHA or bot check, account wall,
-"do not use automated tools", success, emailed-code step, validation errors.
+"do not use automated tools", success, emailed-code step, validation errors. Bot check,
+account wall and refusal texts count only inside a visible form, so a job description
+that mentions bots does not stop a run; bot check frames and titles count anywhere.
 
 These only read the page. They never click, type or try to get past anything.
 """
@@ -70,6 +72,7 @@ class PageScan:
     url: str = ""
     title: str = ""
     body: str = ""
+    form: str = ""
     frames: list[dict[str, Any]] = field(default_factory=list)
     password: bool = False
     otp: bool = False
@@ -83,6 +86,7 @@ def scan_page(page: Page) -> PageScan:
         url=str(data.get("url") or ""),
         title=str(data.get("title") or ""),
         body=str(data.get("body") or ""),
+        form=str(data.get("form") or ""),
         frames=[f for f in data.get("frames") or [] if isinstance(f, dict)],
         password=bool(data.get("password")),
         otp=bool(data.get("otp")),
@@ -108,14 +112,14 @@ def captcha_in(scan: PageScan) -> str | None:
             return "a visible bot check (CAPTCHA) window"
     if scan.title.strip().casefold().startswith("just a moment"):
         return "a browser check page"
-    match = _CAPTCHA_TEXT.search(scan.body)
-    return f"the page says: {_sentence(scan.body, match)}" if match else None
+    match = _CAPTCHA_TEXT.search(scan.form)
+    return f"the page says: {_sentence(scan.form, match)}" if match else None
 
 
 def account_wall_in(scan: PageScan) -> str | None:
-    match = _ACCOUNT_TEXT.search(scan.body)
+    match = _ACCOUNT_TEXT.search(scan.form)
     if match:
-        return f"the page says: {_sentence(scan.body, match)}"
+        return f"the page says: {_sentence(scan.form, match)}"
     return "a password field" if scan.password else None
 
 
@@ -135,40 +139,12 @@ def email_code_in(scan: PageScan) -> bool:
     return scan.otp or bool(_CODE_TEXT.search(scan.body))
 
 
-def detect_captcha(page: Page) -> str | None:
-    """What bot check is showing (a visible CAPTCHA window, a browser check, a spam flag)."""
-    return captcha_in(scan_page(page))
-
-
-def detect_account_wall(page: Page) -> str | None:
-    """Why the form looks like it needs an account, or None."""
-    return account_wall_in(scan_page(page))
-
-
-def detect_automation_refusal(page: Page) -> str | None:
-    """The sentence asking people not to use automated tools or AI agents, or None."""
-    return refusal_in(scan_page(page).body)
-
-
-def detect_success(page: Page) -> bool:
-    return success_in(scan_page(page))
-
-
-def detect_email_code(page: Page) -> bool:
-    return email_code_in(scan_page(page))
-
-
-def collect_errors(page: Page) -> list[str]:
-    """Visible validation messages and fields marked invalid (at most 12)."""
-    return scan_page(page).errors
-
-
 def hard_stop(scan: PageScan) -> tuple[str, str] | None:
     """(status, what was seen) for a reason to stop before filling, or None."""
     for status, check in (
         ("captcha", captcha_in),
         ("account_required", account_wall_in),
-        ("automation_refused", lambda s: refusal_in(s.body)),
+        ("automation_refused", lambda s: refusal_in(s.form)),
     ):
         seen = check(scan)
         if seen:

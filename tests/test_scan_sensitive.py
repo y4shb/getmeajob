@@ -131,6 +131,27 @@ def test_history_finds_deleted_file_and_author(planted: tuple[Path, Path]) -> No
     assert "scan: " in human and "denylist 1" in human
 
 
+def test_all_objects_finds_orphaned_and_reflog_only_objects(tmp_path: Path) -> None:
+    repo = _new_repo(tmp_path / "orphans")
+    (repo / "README.md").write_text("clean\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "docs")
+    loose = tmp_path / "loose.txt"
+    loose.write_text(PLANTS["email"] + "\n", encoding="utf-8")
+    _git(repo, "hash-object", "-w", str(loose))  # a blob that no commit points at
+    (repo / "notes.txt").write_text(PLANTS["key-aws"] + "\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "oops")
+    _git(repo, "reset", "-q", "--hard", "HEAD~1")  # that commit is now only in the reflog
+    code, output, data = _run("--history", "--repo", str(repo), "--json")
+    assert code == 0 and data is not None and data["findings"] == [], output
+    code, output, data = _run("--all-objects", "--repo", str(repo), "--json")
+    assert code == 1 and data is not None
+    found = {f["rule"]: f["location"] for f in data["findings"]}
+    assert found["email"].startswith("(no path):1@") and found["key"].startswith("notes.txt:1@")
+    assert PLANTS["email"] not in output and PLANTS["key-aws"] not in output
+
+
 def test_clean_repo_exits_zero(tmp_path: Path) -> None:
     repo = _new_repo(tmp_path / "clean")
     (repo / "README.md").write_text(
@@ -218,6 +239,7 @@ def test_path_mode_skips_venv_and_honours_allow(tmp_path: Path) -> None:
 def test_usage_errors_exit_two(tmp_path: Path) -> None:
     assert _run("--path", str(tmp_path / "missing"))[0] == 2
     assert _run("--path", str(tmp_path), "--tree")[0] == 2
+    assert _run("--path", str(tmp_path), "--all-objects")[0] == 2
     assert _run("--tree", "--repo", str(tmp_path))[0] == 2  # not a git repository
     assert _run("--path", str(tmp_path), "--denylist", str(tmp_path / "nope.txt"))[0] == 2
     (tmp_path / ".scan-allow").write_text("([unclosed\n", encoding="utf-8")

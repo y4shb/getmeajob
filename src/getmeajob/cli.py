@@ -1,12 +1,6 @@
-"""The `getmeajob` command line.
-
-Each package owns its commands in `getmeajob/<pkg>/cli.py`, which exposes
-`register(sub)`. `register` adds parsers with `sub.add_parser(...)` and sets
-`func=handler`, where `handler(args, ctx) -> int` returns the exit code.
-
-`--home`, `--json` and `-q/--quiet` are global and work before or after the command
-name (`getmeajob --json source` and `getmeajob source --json` are the same). Do not add
-them again in a command; argparse will refuse the duplicate.
+"""The `getmeajob` command line. Each `getmeajob/<pkg>/cli.py` has `register(sub)`, which
+adds parsers with `func=handler(args, ctx) -> int`. `--home`, `--json` and `-q` are global
+and work before or after the command name.
 """
 
 from __future__ import annotations

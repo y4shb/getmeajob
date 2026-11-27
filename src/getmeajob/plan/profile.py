@@ -41,14 +41,6 @@ class Profile:
         value = get_path(self.data, dotted)
         return None if is_blank(value) else value
 
-    def first(self, *paths: str) -> tuple[Any | None, str | None]:
-        """The first non-blank value among `paths`, with the path it came from."""
-        for dotted in paths:
-            value = self.get(dotted)
-            if value is not None:
-                return value, dotted
-        return None, None
-
     def text(self, dotted: str) -> str | None:
         """The value as trimmed text (numbers become text), or None when blank."""
         value = self.get(dotted)

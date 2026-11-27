@@ -15,7 +15,7 @@ from collections.abc import Callable, Sequence
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page
 
-from getmeajob.apply.fields import by_id, safely
+from getmeajob.apply.fields import by_id, click, safely
 from getmeajob.apply.scripts import page_script
 from getmeajob.plan.options import MatchResult, match_option
 from getmeajob.textutil import norm_label
@@ -64,8 +64,7 @@ def click_option(page: Page, box: Locator, label: str) -> bool:
     state = box.evaluate(_MENU_JS, label)
     if not state.get("marked"):
         return False
-    page.locator('[data-getmeajob-pick="1"]').first.click()
-    return True
+    return click(page.locator('[data-getmeajob-pick="1"]').first) is None
 
 
 def close_menu(page: Page, box: Locator, *, clear: bool) -> None:
@@ -121,7 +120,9 @@ def react_select(
         )
         target = control.first if control.count() else box
         target.scroll_into_view_if_needed()
-        target.click()
+        problem = click(target)
+        if problem:
+            return problem
         options = listed = read_options(page, box, timeout=1.0)
         result = pick_fn(options) if options else MatchResult(None, "none", "no options")
         typed = (query if query is not None else desired)[:30]

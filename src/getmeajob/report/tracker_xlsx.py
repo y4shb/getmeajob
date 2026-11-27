@@ -1,4 +1,4 @@
-"""The Excel tracker: `write_tracker_xlsx` and `read_tracker_edits`.
+"""The Excel tracker: `build_tracker_xlsx` and `read_tracker_edits`.
 
 Sheets, in order: Read me, Tracker, All jobs, Job descriptions, Queue, Questions.
 You edit Status, Next action and Notes on the Tracker and bring them back with
@@ -51,7 +51,6 @@ from getmeajob.report.xlsx_read import (
     STATUS,
     SYNC,
     Edit,
-    norm_word,
     read_tracker_edits,
     sync_value,
 )
@@ -72,10 +71,17 @@ from getmeajob.report.xlsx_style import (
     wrap_columns,
 )
 from getmeajob.track.snapshot import Snapshot, load_snapshot
-from getmeajob.track.status import GREEN, GREY, LADDER, MEANING, counts_in_ladder_order
+from getmeajob.track.status import (
+    GREEN,
+    GREY,
+    LADDER,
+    MEANING,
+    counts_in_ladder_order,
+    norm_word,
+)
 from getmeajob.workspace import Workspace
 
-__all__ = ["Edit", "XlsxResult", "build_tracker_xlsx", "read_tracker_edits", "write_tracker_xlsx"]
+__all__ = ["Edit", "XlsxResult", "build_tracker_xlsx", "read_tracker_edits"]
 
 GREEN_FILL, YELLOW_FILL, GREY_FILL = fill("E2F0D9"), fill("FFF2CC"), fill("E7E6E6")
 
@@ -301,8 +307,3 @@ def build_tracker_xlsx(ws: Workspace, path: Path, snap: Snapshot | None = None) 
     book.save(buffer)
     atomic_write_bytes(path, buffer.getvalue())
     return XlsxResult(path, len(rows), len(all_rows), kept)
-
-
-def write_tracker_xlsx(ws: Workspace, path: Path) -> Path:
-    """Write the Excel tracker to `path` and return it."""
-    return build_tracker_xlsx(ws, path).path

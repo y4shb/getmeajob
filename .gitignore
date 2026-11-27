@@ -4,6 +4,13 @@ workspace/
 profile.yaml
 answers*.yaml
 *.profile.yaml
+todo.yaml
+companies.yaml
+companies.txt
+preferences.yaml
+bank.yaml
+tracker.md
+notes.jsonl
 ledger*.jsonl
 events*.jsonl
 queue*.jsonl
@@ -13,15 +20,20 @@ shots/
 screenshots/
 *.png
 *.jpg
-browser-profile/
-pw-profile*/
+*.jpeg
+*.webp
+*.heic
+*profile*/
 resumes/
 roles/
 *.pdf
+*.docx
 
 # Secrets and caches
 .env
 .env.*
+.envrc
+credentials*.json
 cache/
 .cache/
 
@@ -43,11 +55,12 @@ build/
 
 # Synthetic files that ship with the repo stay tracked.
 !config/*.example.yaml
-!examples/**
-!docs/assets/**
-!tests/fixtures/**
+!examples/**/*.yaml
+!examples/**/*.json
+!examples/**/*.html
+!agents/**/*.md
 
-# ...but these never belong in the repo, not even under examples/ or tests/fixtures/.
+# ...but these never belong in the repo, not even under examples/.
 **/.DS_Store
 **/__pycache__/
 *.pyc

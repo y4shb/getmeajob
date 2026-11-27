@@ -57,7 +57,8 @@ def _as_url(target: str) -> str:
 
 def _menu_options(page: Any, row: FieldRow) -> list[str]:
     """Open a closed dropdown, read its options, close it again. Never types."""
-    from getmeajob.apply.widgets import by_id, close_menu, read_options
+    from getmeajob.apply.fields import by_id
+    from getmeajob.apply.menus import close_menu, read_options
 
     box = by_id(page, row.field)
     if not row.field or box.count() == 0:
@@ -76,7 +77,7 @@ def inspect_form(url: str, settings: Settings, *, timeout_ms: int = 30_000) -> I
     """Read the fields of the form at `url` (a local file path works too)."""
     api = require_playwright()
     target = form_target(_as_url(url), settings)
-    local = settings.fixtures is not None or settings.offline
+    local = settings.fixtures is not None
     with BrowserSession(headed=False, local_only=local) as session:
         context, page = session.new_page()
         try:
@@ -107,7 +108,7 @@ def inspect_form(url: str, settings: Settings, *, timeout_ms: int = 30_000) -> I
                 for name, seen in (
                     ("bot check", captcha_in(scan)),
                     ("account wall", account_wall_in(scan)),
-                    ("asks for no automated tools", refusal_in(scan.body)),
+                    ("asks for no automated tools", refusal_in(scan.form)),
                 )
                 if seen
             ]

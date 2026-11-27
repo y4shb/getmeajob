@@ -7,25 +7,29 @@ one JSON object with `--json`. The board commands live in `cli_boards.py`.
 from __future__ import annotations
 
 import argparse
-import difflib
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from getmeajob.errors import ConfigError, GetmeajobError
+from getmeajob.errors import ConfigError
 from getmeajob.http import client_for
-from getmeajob.models import Board, Job
-from getmeajob.sources.boards import board_id, load_boards
+from getmeajob.sources.boards import load_boards
 from getmeajob.sources.cli_boards import register as register_board_commands
-from getmeajob.sources.feeds import FEEDS
 from getmeajob.sources.jd import jd_digest, jd_grep
-from getmeajob.sources.pipeline import SourceRunSummary, run_source
-from getmeajob.sources.registry import get_source, plugin_problems
+from getmeajob.sources.pipeline import (
+    SourceRunSummary,
+    diff_rows,
+    parse_feeds,
+    run_source,
+    select_boards,
+)
+from getmeajob.sources.registry import plugin_problems
 from getmeajob.store import JobStore
 from getmeajob.textutil import truncate
 from getmeajob.yamlio import load_yaml
 
 if TYPE_CHECKING:
     from getmeajob.cli import Context
+
+__all__ = ["diff_rows", "parse_feeds", "register", "select_boards"]
 
 DIFF_COLUMNS = ("change", "company", "title", "location", "key")
 _WIDTHS = {"company": 28, "title": 40, "location": 40}
@@ -44,70 +48,6 @@ def positive_int(text: str) -> int:
 
 
 # ------------------------------------------------------------------ source
-
-
-def parse_feeds(text: str | None) -> list[str]:
-    names = [n.strip().casefold() for n in (text or "").split(",") if n.strip()]
-    unknown = [n for n in names if n not in FEEDS]
-    if unknown:
-        raise ConfigError(
-            f"Unknown feed: {', '.join(unknown)}.",
-            hint=f"Feeds are {', '.join(FEEDS)}, for example --feeds remotive,hn.",
-        )
-    return list(dict.fromkeys(names))
-
-
-def select_boards(
-    boards: list[Board], specs: Sequence[str] | None, companies: Sequence[str] | None
-) -> list[Board]:
-    """Enabled boards, or the ones named with --board / --company (enabled or not)."""
-    if not specs and not companies:
-        return [b for b in boards if b.enabled]
-    picked: list[Board] = []
-    by_id = {board_id(b): b for b in boards}
-    for spec in specs or ():
-        ats, sep, slug = spec.partition(":")
-        if not sep or not ats.strip() or not slug.strip():
-            raise ConfigError(
-                f"--board {spec!r} is not in the form ats:slug.",
-                hint="For example: --board greenhouse:examplecorp",
-            )
-        source = get_source(ats)
-        found = by_id.get((source.name, slug.strip().casefold()))
-        picked.append(found or Board(company=slug.strip(), ats=source.name, slug=slug.strip()))
-    for wanted in companies or ():
-        key = wanted.strip().casefold()
-        matches = [b for b in boards if b.company.casefold() == key] or [
-            b for b in boards if key and key in b.company.casefold()
-        ]
-        if not matches:
-            raise ConfigError(
-                f"No board in companies.yaml matches the company {wanted!r}.",
-                hint="Run `getmeajob boards` to see the names.",
-            )
-        picked += matches
-    return list({board_id(b): b for b in picked}.values())
-
-
-def diff_rows(summary: SourceRunSummary, jobs: dict[str, Job]) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for change, keys in (
-        ("new", summary.new_keys),
-        ("changed", summary.changed_keys),
-        ("closed", summary.closed_keys),
-    ):
-        for key in keys:
-            job = jobs.get(key)
-            rows.append(
-                {
-                    "change": change,
-                    "company": job.company if job else "",
-                    "title": job.title if job else "",
-                    "location": job.location if job else "",
-                    "key": key,
-                }
-            )
-    return rows
 
 
 def _print_source(
@@ -185,27 +125,9 @@ def _cmd_source(args: argparse.Namespace, ctx: Context) -> int:
 # ---------------------------------------------------------------------- jd
 
 
-def _find_job(store: JobStore, key: str) -> Job:
-    """The job with this key, or the only job whose key contains it ("1001" is enough)."""
-    jobs = store.load()
-    job = jobs.get(key)
-    if job is not None:
-        return job
-    partial = [k for k in jobs if key and key in k]
-    if len(partial) == 1:
-        return jobs[partial[0]]
-    close = partial[:3] or difflib.get_close_matches(key, list(jobs), n=3, cutoff=0.6)
-    hint = "Keys look like greenhouse:examplecorp:1001 (see `getmeajob source` or `rank`)."
-    if close:
-        hint = f"Did you mean {', '.join(close)}?"
-    elif not jobs:
-        hint = "No jobs are stored yet. Run `getmeajob source` first."
-    raise GetmeajobError(f"No job with the key {key!r}.", hint=hint)
-
-
 def _cmd_jd(args: argparse.Namespace, ctx: Context) -> int:
     ws = ctx.ws.require()
-    job = _find_job(JobStore(ws), args.key)
+    job = JobStore(ws).find(args.key)
     path = ws.jd_path(job.key)
     text = path.read_text(encoding="utf-8") if path.exists() else job.description
     out = ctx.out

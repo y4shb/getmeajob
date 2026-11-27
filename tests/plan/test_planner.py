@@ -5,6 +5,8 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
+import pytest
+
 from getmeajob.demo import examples_dir
 from getmeajob.files import write_jsonl_atomic
 from getmeajob.models import AppStatus, Job, PlanStatus, QueueKind
@@ -12,10 +14,12 @@ from getmeajob.plan.overrides import merge_answers
 from getmeajob.plan.planner import load_plan, plan_run
 from getmeajob.store import JobStore, QueueLog, StatusLog
 from getmeajob.workspace import Workspace
+from getmeajob.yamlio import dump_yaml, load_yaml
 
 GH = "greenhouse:examplecorp:1001"
 ASHBY = "ashby:samplesystems:5a1e0000-0000-4000-8000-000000000001"
 WHY = "Why do you want to join Example Corp?"
+SPONSOR = "Will you now or in the future require sponsorship for employment visa status?"
 
 
 def _snapshot(ws: Workspace) -> dict[str, int]:
@@ -31,10 +35,10 @@ def test_demo_plan_needs_answers_then_ready_after_answer(planned_ws: Workspace) 
     plans = {p.job_key: p for p in run.plans}
     gh = plans[GH]
     assert gh.status == PlanStatus.needs_answers
-    assert [u.question_id for u in gh.unknowns] == ["question_2005"]
+    assert [u.question_id for u in gh.unknowns] == ["question_2003", "question_2005"]
+    assert "says which country" in gh.unknowns[0].reason  # remote, no country: never inferred
     answers = {a.question_id: a for a in gh.answers}
     assert answers["question_2002"].value == "Yes"
-    assert answers["question_2003"].value == "No"
     assert answers["question_2004"].value == "3-5"
     assert answers["demographic_4001"].value == "Decline to self-identify"
     assert answers["cover_letter"].source == "skip"
@@ -48,7 +52,9 @@ def test_demo_plan_needs_answers_then_ready_after_answer(planned_ws: Workspace) 
     stored = json.loads(planned_ws.plan_path(GH).read_text(encoding="utf-8"))
     assert stored["status"] == "needs_answers" and stored["inputs_hash"]
 
-    merge_answers(planned_ws, {"by_company": {"examplecorp": {WHY: "Synthetic answer."}}})
+    merge_answers(
+        planned_ws, {"by_company": {"examplecorp": {WHY: "Synthetic answer.", SPONSOR: "No"}}}
+    )
     again = plan_run(planned_ws, [GH, ASHBY])
     gh = {p.job_key: p for p in again.plans}[GH]
     assert gh.status == PlanStatus.ready and not gh.unknowns
@@ -79,9 +85,7 @@ def test_blocked_on_automation_refusal(
         "<p>Please do not use automated tools or AI agents to complete this application.</p>"
     )
     target.write_text(json.dumps(data), encoding="utf-8")
-    (planned_ws.root / "settings.yaml").write_text(
-        f"fixtures: {fixtures}\noffline: true\n", encoding="utf-8"
-    )
+    (planned_ws.root / "settings.yaml").write_text(f"fixtures: {fixtures}\n", encoding="utf-8")
     key = "greenhouse:examplecorp:1009"
     JobStore(planned_ws).upsert([make_job(key, "Example Corp", "X", "Remote")], "2026-11-27T00:00Z")
     plan = plan_run(planned_ws, [key]).plans[0]
@@ -102,7 +106,8 @@ def test_queue_item_added_and_resolved(planned_ws: Workspace) -> None:
     assert WHY in open_items[0].detail
     status = StatusLog(planned_ws)
     assert status.current(GH) == AppStatus.planned
-    merge_answers(planned_ws, {"by_job": {GH: {"question_2005": "Synthetic answer."}}})
+    answers = {"question_2005": "Synthetic answer.", "question_2003": "No"}
+    merge_answers(planned_ws, {"by_job": {GH: answers}})
     plan_run(planned_ws, [GH])
     assert [i for i in QueueLog(planned_ws).open_items() if i.job_key == GH] == []
     history = [(e.status, e.source) for e in StatusLog(planned_ws).history(GH)]
@@ -116,7 +121,11 @@ def test_saved_answer_must_match_options(planned_ws: Workspace) -> None:
     assert arrangement.source == "skip" and "not one of the options" in arrangement.note
     merge_answers(planned_ws, {"by_job": {GH: {"question_2004": "7"}}})
     gh = plan_run(planned_ws, [GH]).plans[0]
-    assert {u.question_id for u in gh.unknowns} == {"question_2004", "question_2005"}
+    assert {u.question_id for u in gh.unknowns} == {
+        "question_2003",
+        "question_2004",
+        "question_2005",
+    }
 
 
 def test_default_selection_reads_ranked_shortlist(planned_ws: Workspace) -> None:
@@ -176,3 +185,24 @@ def test_schema_unavailable_and_unknown_key(planned_ws: Workspace) -> None:
     assert run.plans[0].blocked_reason
     assert load_plan(planned_ws, key) is not None
     assert run.skipped == [("greenhouse:nobody:1", "not in data/jobs.jsonl (run getmeajob source)")]
+
+
+def test_file_answers_stay_inside_the_workspace(
+    planned_ws: Workspace, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    secret = tmp_path / "secret.txt"
+    secret.write_text("synthetic", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert planned_ws.root.parent == tmp_path
+    for name in (str(secret), "~/secret.txt", "../secret.txt"):
+        merge_answers(planned_ws, {"by_job": {GH: {"resume": name}}})
+        plan = plan_run(planned_ws, [GH]).plans[0]
+        resume = next(u for u in plan.unknowns if u.question_id == "resume")
+        assert "outside the workspace" in resume.reason, name
+    profile = load_yaml(planned_ws.profile_path)
+    profile["files"]["cover_letter"] = "~/secret.txt"  # your own choice in profile.yaml
+    dump_yaml(planned_ws.profile_path, profile)
+    merge_answers(planned_ws, {"by_job": {GH: {"cover_letter": "~/secret.txt"}}})
+    plan = plan_run(planned_ws, [GH]).plans[0]
+    cover = next(a for a in plan.answers if a.question_id == "cover_letter")
+    assert cover.value == str(secret.resolve())

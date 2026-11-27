@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from getmeajob.files import minute_text, utc_text
-from getmeajob.models import AppStatus, PlanStatus, QueueKind
+from getmeajob.models import ApplyStatus, AppStatus, PlanStatus, QueueKind
 from getmeajob.queue.view import counts_by_kind
 from getmeajob.report.rows import open_questions
 from getmeajob.sources.registry import ATS_FOR_FORMS
@@ -33,7 +33,16 @@ def _names(snap: Snapshot, keys: list[str]) -> str:
     return truncate("; ".join(shown), 150) + more
 
 
-def _next_command(snap: Snapshot, unknowns: int) -> str:
+def _tracker_is_current(ws: Workspace) -> bool:
+    """The Excel tracker is newer than everything under `data/`."""
+    export = ws.exports_dir / "tracker.xlsx"
+    if not export.is_file():
+        return False
+    data = (p.stat().st_mtime_ns for p in ws.data_dir.rglob("*") if p.is_file())
+    return export.stat().st_mtime_ns > max(data, default=0)
+
+
+def _next_command(snap: Snapshot, unknowns: int) -> str | None:
     if not snap.jobs:
         return "getmeajob source"
     if not snap.ranked:
@@ -42,7 +51,7 @@ def _next_command(snap: Snapshot, unknowns: int) -> str:
     if human:
         return "getmeajob queue"
     if unknowns:
-        return "getmeajob plan unknowns --stub todo.yaml"
+        return "getmeajob plan unknowns --stub answers-todo.yaml"
     unplanned = [
         k
         for k, job in snap.jobs.items()
@@ -61,9 +70,16 @@ def _next_command(snap: Snapshot, unknowns: int) -> str:
     ]
     if ready:
         return "getmeajob apply --mode dry"
+    dry_run = [
+        k
+        for k, entries in snap.ledger.items()
+        if entries[-1].status == ApplyStatus.dry_ok and snap.status_of(k) == AppStatus.ready
+    ]
+    if dry_run:
+        return "getmeajob apply --mode hold --headed"
     if ghost_candidates(snap):
         return "getmeajob track ghost"
-    return "getmeajob report"
+    return None if _tracker_is_current(snap.ws) else "getmeajob report"
 
 
 def status_digest(ws: Workspace) -> dict[str, Any]:
@@ -145,5 +161,5 @@ def status_lines(digest: dict[str, Any]) -> list[str]:
         lines.append(f"  - {truncate(q['label'], 70)} ({q['jobs']} job(s), {need})")
     if len(questions) > QUESTIONS_SHOWN:
         lines.append(f"  - and {len(questions) - QUESTIONS_SHOWN} more: getmeajob plan unknowns")
-    lines.append(f"next: {digest['next']}")
+    lines.append(f"next: {digest['next'] or 'nothing to do; the tracker is up to date'}")
     return lines[:MAX_LINES]

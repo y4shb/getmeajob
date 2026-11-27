@@ -1,4 +1,4 @@
-"""The simplest field drivers: find a field by id, type text, attach a file.
+"""The simplest field drivers: find a field by id, click, type text, attach a file.
 
 Every driver returns a problem sentence or None. `safely` turns a browser error into a
 problem, except when the page is gone, which is raised so the run can record it.
@@ -13,6 +13,14 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page
 
 from getmeajob.apply.values import coerce_date, coerce_number
+
+_SUBMITS_JS = """(e) => {
+  const b = e.closest('button, input[type=submit], input[type=image]');
+  if (!b) return false;
+  const type = (b.getAttribute('type') || '').toLowerCase();
+  return type === 'submit' || type === 'image' || (b.type === 'submit' && !!b.form);
+}"""
+WOULD_SUBMIT = "this button would submit the form, so getmeajob did not click it"
 
 
 def by_id(page: Page, field_id: str) -> Locator:
@@ -35,6 +43,15 @@ def safely(page: Page, action: Callable[[], str | None]) -> str | None:
             raise
         first = str(exc).strip().splitlines()[0] if str(exc).strip() else type(exc).__name__
         return f"the browser could not use this field ({first[:120]})"
+
+
+def click(target: Locator) -> str | None:
+    """Click `target`, unless it is (or sits in) a button that would submit the form:
+    a `type=submit` button, or a button with no type inside a form."""
+    if target.evaluate(_SUBMITS_JS):
+        return WOULD_SUBMIT
+    target.click()
+    return None
 
 
 def fill_text(page: Page, selector: str, value: str, *, label: str = "") -> str | None:

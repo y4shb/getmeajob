@@ -1,19 +1,17 @@
 """Field drivers built on the menus in `apply.menus`: a choice field by id, checkbox
-groups, Ashby choice and yes/no questions, the location type-ahead and repeaters.
+groups, Ashby choice and yes/no questions, and the location type-ahead.
 
 Each driver fills one field and returns a problem sentence or None (see `apply.menus`
-for what a problem may say and how choices are matched). This module also re-exports
-the simpler drivers, so fillers import every widget from one place.
+for what a problem may say and how choices are matched).
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from playwright.sync_api import Locator, Page
 
-from getmeajob.apply.fields import by_id, fill_text, quote_attr, safely, upload_file
+from getmeajob.apply.fields import by_id, click, quote_attr, safely
 from getmeajob.apply.menus import (
     Matcher,
     click_option,
@@ -28,29 +26,6 @@ from getmeajob.apply.values import pick_location
 from getmeajob.plan.options import match_option
 from getmeajob.plan.profile import Profile
 from getmeajob.textutil import norm_label
-
-if TYPE_CHECKING:
-    from getmeajob.apply.repeater import SectionResult
-
-__all__ = [
-    "Matcher",
-    "ashby_boolean",
-    "ashby_choice",
-    "by_id",
-    "check_multi",
-    "choose",
-    "close_menu",
-    "field_box",
-    "fill_repeater",
-    "fill_text",
-    "location_typeahead",
-    "native_select",
-    "quote_attr",
-    "react_select",
-    "read_options",
-    "safely",
-    "upload_file",
-]
 
 
 def choose(
@@ -189,7 +164,9 @@ def ashby_boolean(page: Page, path: str, desired: str | bool) -> str | None:
         if result.option is None:
             return no_fit(result, texts)
         button = buttons.nth(texts.index(result.option))
-        button.click()
+        problem = click(button)
+        if problem:
+            return problem
         pressed = button.get_attribute("aria-pressed")
         return None if pressed in (None, "true") else "the button did not stay pressed"
 
@@ -241,10 +218,3 @@ def location_typeahead(
         return None
 
     return safely(page, act)
-
-
-def fill_repeater(page: Page, section: str, rows: Sequence[object]) -> SectionResult:
-    """Fill an employment or education section row by row (see `apply.repeater`)."""
-    from getmeajob.apply.repeater import fill_section
-
-    return fill_section(page, section, rows)

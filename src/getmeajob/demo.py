@@ -47,8 +47,7 @@ DEMO_PDF_LINES = [
 
 _SETTINGS_HEADER = """\
 # getmeajob settings. Every line is optional; delete one to use the default.
-# offline: true means getmeajob never uses the network.
-# fixtures: a folder of recorded replies to use instead of the network.
+# fixtures: a folder of recorded replies to use instead of the network (offline).
 # min_interval: seconds between two requests to the same site.
 # timeout: seconds to wait for a reply. retries: extra tries after a timeout or busy site.
 # max_workers: how many requests may run at the same time.
@@ -141,7 +140,7 @@ def _settings_text(fixtures: Path | None) -> str:
     data: dict[str, object] = {}
     if fixtures is not None:
         data["fixtures"] = str(fixtures)
-    data.update(offline=fixtures is not None, min_interval=1.0, timeout=25.0, retries=3)
+    data.update(min_interval=1.0, timeout=25.0, retries=3)
     data["max_workers"] = 4
     return _SETTINGS_HEADER + yaml.safe_dump(data, sort_keys=False)
 

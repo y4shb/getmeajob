@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from getmeajob.errors import GetmeajobError
 from getmeajob.files import read_json
 from getmeajob.models import Job
 from getmeajob.rank.score import job_text
@@ -132,17 +131,9 @@ def context_text(pack: dict[str, Any]) -> str:
 
 
 def find_job_by_key(ws: Workspace, key: str) -> Job:
-    """The job with this key, or the one job whose key contains `key` (like the CLI)."""
-    matches = JobStore(ws).matching(key)
-    if len(matches) == 1:
-        return matches[0]
-    if matches:
-        raise GetmeajobError(f"'{key}' matches {len(matches)} jobs.", hint="Give more of the key.")
-    raise GetmeajobError(
-        f"No job with the key '{key}'.", hint="Run `getmeajob track list` to see the keys."
-    )
+    return JobStore(ws).find(key)
 
 
 def context_for(ws: Workspace, key: str) -> str:
     """The context pack for one job as text (for agents and the MCP server)."""
-    return context_text(context_pack(ws.require(), find_job_by_key(ws, key)))
+    return context_text(context_pack(ws.require(), JobStore(ws).find(key)))

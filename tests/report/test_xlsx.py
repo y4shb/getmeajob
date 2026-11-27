@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 from getmeajob.cli import main
 from getmeajob.files import read_jsonl
 from getmeajob.models import AppStatus
-from getmeajob.report.tracker_xlsx import read_tracker_edits, write_tracker_xlsx
+from getmeajob.report.tracker_xlsx import build_tracker_xlsx, read_tracker_edits
 from getmeajob.store import JobStore, StatusLog
 from getmeajob.track.notes import NotesLog, notes_path
 from getmeajob.workspace import Workspace
@@ -125,7 +125,7 @@ def test_sheets_columns_validation_links(pipeline_ws: Workspace, cli: Cli) -> No
 
 
 def test_roundtrip_import_records_changes_once(pipeline_ws: Workspace, cli: Cli) -> None:
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     assert read_tracker_edits(path) == []
     _edit(path, GH, Status="Applied", Notes="Sent through the careers page")
     _edit(path, LEVER, **{"Next action": "Ask about Go"})
@@ -161,7 +161,7 @@ def test_roundtrip_import_records_changes_once(pipeline_ws: Workspace, cli: Cli)
 
 
 def test_rewrite_keeps_unimported_edits(pipeline_ws: Workspace, cli: Cli) -> None:
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     _edit(path, GH, Status="withdrawn", Notes="Not for me")
     code, out, _ = cli(pipeline_ws, "report")
     assert code == 0 and "Kept 2 edit(s)" in out
@@ -173,14 +173,14 @@ def test_rewrite_keeps_unimported_edits(pipeline_ws: Workspace, cli: Cli) -> Non
 
 
 def test_untouched_rows_in_an_old_copy_change_nothing(pipeline_ws: Workspace, cli: Cli) -> None:
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     assert cli(pipeline_ws, "track", "set", GH, "interviewing")[0] == 0
     assert cli(pipeline_ws, "track", "import-xlsx", str(path))[0] == 0  # still says "planned"
     assert StatusLog(pipeline_ws).current(GH) == AppStatus.interviewing
 
 
 def test_unknown_status_reported_not_recorded(pipeline_ws: Workspace, cli: Cli) -> None:
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     _edit(path, GH, Status="interviewd")
     events = len(read_jsonl(pipeline_ws.events_path))
     code, out, _ = cli(pipeline_ws, "--json", "track", "import-xlsx", str(path))
@@ -191,7 +191,7 @@ def test_unknown_status_reported_not_recorded(pipeline_ws: Workspace, cli: Cli) 
 
 
 def test_columns_found_by_header_name(pipeline_ws: Workspace) -> None:
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     book = load_workbook(path)
     sheet = book["Tracker"]
     sheet.insert_cols(1)  # someone adds a column in front of Key
@@ -219,7 +219,7 @@ def test_text_never_becomes_a_formula_and_long_jd_is_capped(pipeline_ws: Workspa
     store.upsert([job], "2026-11-27T12:00:00Z")
     pipeline_ws.jd_path(GH).write_text("word \x07" * 20_000, encoding="utf-8")
     NotesLog(pipeline_ws).set(GH, "notes", "=1+1", "xlsx")
-    path = write_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx")
+    path = build_tracker_xlsx(pipeline_ws, pipeline_ws.exports_dir / "tracker.xlsx").path
     book = load_workbook(path)
     tracker = book["Tracker"]
     row = _row_for(tracker, GH)

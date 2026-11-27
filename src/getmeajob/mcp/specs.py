@@ -71,8 +71,9 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
         "Save the user's answers",
         "Save answers THE USER GAVE YOU, as {question label: answer}. Only the user's own "
         "words or an option they picked; never a guess, an inferred value or your own "
-        "draft they did not approve. Empty answers are refused. Optional: company (board "
-        "slug) or job_key to save them for one company or one job only.",
+        "draft they did not approve. Empty answers and file questions are refused. Saved "
+        "answers wait for the user's review (getmeajob plan approve --all). Optional: "
+        "company (board slug) or job_key to save them for one company or one job only.",
         read_only=False,
         destructive=True,
     ),

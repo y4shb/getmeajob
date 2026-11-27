@@ -27,10 +27,12 @@ Files that getmeajob writes in one step, such as `data/jobs.jsonl` and the plans
 1. Requests to the job board APIs of the boards in `companies.yaml`, and to the job and form pages of the jobs you plan or apply to.
 2. Feed requests, only for the feeds you name with `--feeds`.
 3. Requests to the careers pages and board APIs for the companies in the file you give `getmeajob discover`. Your company list is never sent to a lookup service.
-4. A filled application, only when you click Submit or a submit mode you switched on clicks it.
+4. A filled application, when you click Submit or a submit mode you switched on clicks it. Some sites upload an attachment, such as your resume, as soon as it is added to the form, even in a dry run.
 5. AI drafting, only when you run `getmeajob plan draft`. The prompt holds the question, the job title and company, the start of the job text and a few profile facts. It goes to Anthropic or to the command in `GETMEAJOB_LLM_COMMAND`.
 
 getmeajob sends no usage data. The demo workspace sends nothing at all: board replies come from recorded files, and the browser blocks every request that is not a local file.
+
+The HTTP client never fetches an address on your own computer or private network, even when a job link or a redirect points there. It follows at most 5 redirects and stops reading a reply larger than 10 MB.
 
 ## The privacy scanner
 
@@ -40,8 +42,9 @@ Run it in one of these modes:
 
 1. `python scripts/scan_sensitive.py --tree` checks tracked files and untracked files that are not ignored.
 2. `python scripts/scan_sensitive.py --history` checks every blob, commit message, author and ref in the git history. With no mode flag, the scanner runs `--tree --history`.
-3. `python scripts/scan_sensitive.py --staged` checks what you are about to commit, plus your git identity.
-4. `python scripts/scan_sensitive.py --path DIR` checks a folder without git.
+3. `python scripts/scan_sensitive.py --all-objects` does what `--history` does, plus every object git still keeps that no branch points at, such as commits you rewrote or reset. Run it before you push to a public repository.
+4. `python scripts/scan_sensitive.py --staged` checks what you are about to commit, plus your git identity.
+5. `python scripts/scan_sensitive.py --path DIR` checks a folder without git.
 
 Private lists stay outside the repo:
 

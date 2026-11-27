@@ -15,13 +15,12 @@ from typing import TYPE_CHECKING, Any
 
 from getmeajob.errors import GetmeajobError
 from getmeajob.files import minute_text
-from getmeajob.models import FORWARD_ORDER, AppStatus
-from getmeajob.rank.cli import find_job
-from getmeajob.store import StatusLog
+from getmeajob.models import AppStatus
+from getmeajob.store import JobStore, StatusLog
 from getmeajob.textutil import truncate
 from getmeajob.track.ghost import DEFAULT_DAYS, apply_ghosts, ghost_candidates
 from getmeajob.track.paths import find_user_file, shown
-from getmeajob.track.snapshot import load_snapshot
+from getmeajob.track.snapshot import funnel, load_snapshot
 from getmeajob.track.status import (
     LADDER,
     nonzero,
@@ -30,7 +29,6 @@ from getmeajob.track.status import (
     status_names,
 )
 from getmeajob.track.xlsx_import import import_tracker
-from getmeajob.workspace import Workspace
 
 if TYPE_CHECKING:
     from getmeajob.cli import Context
@@ -50,7 +48,7 @@ def _status_arg(text: str) -> AppStatus:
 
 def _cmd_set(args: argparse.Namespace, ctx: Context) -> int:
     ws = ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     before = StatusLog(ws).current(job.key)
     written = record_by_person(ws, job.key, args.status, "manual", (args.note or "").strip())
     if ctx.out.json_mode:
@@ -75,7 +73,7 @@ def _cmd_set(args: argparse.Namespace, ctx: Context) -> int:
 
 def _cmd_show(args: argparse.Namespace, ctx: Context) -> int:
     ws = ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     snap = load_snapshot(ws)
     key = job.key
     timeline: list[dict[str, Any]] = [
@@ -160,20 +158,6 @@ def _cmd_list(args: argparse.Namespace, ctx: Context) -> int:
     what = f"with status {args.status.value}" if args.status else "tracked"
     ctx.out.done(f"{len(rows)} job(s) {what}{more}.")
     return 0
-
-
-def funnel(ws: Workspace) -> dict[str, Any]:
-    """Jobs per status now, and per forward step how many got at least that far."""
-    snap = load_snapshot(ws)
-    now = snap.counts()
-    reached = {s.value: 0 for s in FORWARD_ORDER}
-    for key in snap.jobs:
-        events = snap.history.get(key, [])
-        steps = [FORWARD_ORDER.index(e.status) for e in events if e.status in FORWARD_ORDER]
-        top = max(steps, default=0)
-        for status in FORWARD_ORDER[: top + 1]:
-            reached[status.value] += 1
-    return {"total": len(snap.jobs), "now": now, "reached": reached}
 
 
 def _cmd_stats(args: argparse.Namespace, ctx: Context) -> int:

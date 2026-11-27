@@ -22,7 +22,7 @@ def test_dry_fills_booleans_choices_location_number(
     ready_ws: Workspace, open_mock: Callable[..., Any]
 ) -> None:
     from getmeajob.apply.ashby import AshbyFiller
-    from getmeajob.apply.widgets import fill_text
+    from getmeajob.apply.fields import fill_text
 
     plan = load_plan(ready_ws, ASHBY)
     assert plan is not None
@@ -61,3 +61,17 @@ def test_ashby_choice_and_boolean_refuse_to_guess(open_mock: Callable[..., Any])
     assert page.locator(f'input[name="{A}5"]:checked').count() == 0
     assert ashby_boolean(page, f"{A}2", "Maybe") is not None
     assert page.locator(f'[data-yesno="{A}2"] button[aria-pressed="true"]').count() == 0
+
+
+def test_buttons_that_would_submit_are_never_clicked(
+    ready_ws: Workspace, open_mock: Callable[..., Any]
+) -> None:
+    from getmeajob.apply.ashby import AshbyFiller
+    from getmeajob.apply.fields import WOULD_SUBMIT
+
+    plan = load_plan(ready_ws, ASHBY)
+    assert plan is not None
+    page = open_mock("ashby", "untyped=1")  # the yes/no buttons have no type, inside the form
+    report = AshbyFiller(fast=True).fill(page, plan, load_profile(ready_ws), ready_ws)
+    assert any(p.startswith(f"{A}2") and WOULD_SUBMIT in p for p in report.problems)
+    assert page.evaluate("window.__submitCount") == 0

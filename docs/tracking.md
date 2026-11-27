@@ -69,7 +69,7 @@ The queue holds things only you can do. The planner and the applier add items an
 | Kind | What we need from you |
 |---|---|
 | needs_email_code | Open the form with `getmeajob apply KEY --mode hold --headed`, then type the code from your email. |
-| needs_answers | Answer the open questions: `getmeajob plan unknowns --stub todo.yaml`, fill it in, then `getmeajob plan answer todo.yaml` and `getmeajob plan`. |
+| needs_answers | Answer the open questions: `getmeajob plan unknowns --stub answers-todo.yaml`, fill it in, then `getmeajob plan answer answers-todo.yaml` and `getmeajob plan`. |
 | validation_error | Fix the answer the form did not accept in `answers.yaml`, then `getmeajob plan KEY` and apply again. |
 | fill_problem | Run `getmeajob apply KEY --mode hold --headed` and finish those fields yourself. |
 | captcha | Apply by hand at the link (getmeajob never solves bot checks), then `getmeajob track set KEY applied`. |

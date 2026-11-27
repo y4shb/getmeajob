@@ -62,7 +62,7 @@ Submit mode is off for every board until you list the board in `apply.submit_boa
 
 ## The per-company cap
 
-By default getmeajob sends at most 2 applications per company in 30 days. It counts jobs that were submitted, or may have been (`awaiting_human`, `needs_email_code`). Dry runs do not count. Change it with `apply.per_company_cap` in `preferences.yaml`; `0` turns it off. Keep it on: many applications to one company in a short time help nobody. `apply.exclude` lists companies getmeajob must never apply to.
+By default getmeajob sends at most 2 applications per company in 30 days. It counts jobs that were submitted, or may have been (`awaiting_human`, `needs_email_code`). Dry runs do not count. Change it with `apply.per_company_cap` in `preferences.yaml`; `0` turns it off. Keep it on: many applications to one company in a short time help nobody. `apply.exclude` and the ranking's `exclude_companies` list companies getmeajob must never apply to.
 
 ## Feeds and their attribution rules
 

@@ -25,7 +25,7 @@ def test_context_under_2000_chars(pipeline_ws: Workspace, cli: Cli) -> None:
         "where: Remote - Worldwide",
         "experience: ",
         "rank: 99/100, eligible",
-        "plan: needs_answers, 1 unknown(s)",
+        "plan: needs_answers, 2 unknown(s)",
         "? Why do you want to join Example Corp?",
         "resume: roles/example-corp-senior-backend-engineer",
         "keyword gaps: none",

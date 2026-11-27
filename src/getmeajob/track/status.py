@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 
-from getmeajob.files import parse_ts as parse_ts  # moved to files; kept here for callers
+from getmeajob.files import parse_ts
 from getmeajob.models import FORWARD_ORDER, AppStatus
 from getmeajob.store import QueueLog, StatusLog
 from getmeajob.workspace import Workspace

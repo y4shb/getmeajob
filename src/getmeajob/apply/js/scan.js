@@ -35,6 +35,7 @@
     }
     push('field marked invalid: ' + (label || i.id || i.name || i.tagName.toLowerCase()));
   }
+  const form = Array.from(document.querySelectorAll('form')).filter(visible).map(text).join('\n');
   return { url: location.href, title: document.title || '', body: text(document.body).slice(0, 30000),
-    frames, password, otp, errors: errors.slice(0, 12) };
+    form: form.slice(0, 30000), frames, password, otp, errors: errors.slice(0, 12) };
 }

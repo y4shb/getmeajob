@@ -32,7 +32,6 @@ if [ -e "$home" ] && [ -n "$(ls -A "$home" 2>/dev/null)" ]; then
 fi
 
 todo="$home/answers-todo.yaml"
-label="Why do you want to join Example Corp?"
 answer="I like building backend services in Python, and this role fits my four years of backend work."
 steps=12
 n=0
@@ -64,16 +63,23 @@ run plan
 step "Write the questions only the candidate can answer to a file"
 run plan unknowns --stub "$todo"
 
-step "Fill in the one open question with a fixed synthetic answer"
-sed "s|\"$label\": \"\"|\"$label\": \"$answer\"|" "$todo" >"$todo.tmp"
+step "Fill in every open question with a synthetic answer (the first option for choices)"
+open_count="$(grep -cE '": (""|\[\])$' "$todo" || true)"
+awk -v answer="$answer" '
+  /^ *# [a-z_]+, (required|optional), / { first = "" }
+  /^ *# options: / { line = $0; sub(/^ *# options: /, "", line); split(line, opts, / [|] /); first = opts[1] }
+  /": ""$/ { $0 = substr($0, 1, length($0) - 2) "\"" (first != "" ? first : answer) "\"" }
+  /": \[\]$/ { $0 = substr($0, 1, length($0) - 2) "[\"" first "\"]" }
+  { print }
+' "$todo" >"$todo.tmp"
 mv "$todo.tmp" "$todo"
-if ! grep -qF "$answer" "$todo"; then
-  echo "error: could not find the question \"$label\" in $todo." >&2
+if [ "$open_count" -eq 0 ] || grep -qE '": (""|\[\])$' "$todo"; then
+  echo "error: could not fill in the open questions in $todo." >&2
   exit 1
 fi
-echo "Answered \"$label\" in $todo"
+echo "Answered $open_count open question(s) in $todo"
 
-step "Save the answer into answers.yaml"
+step "Save the answers into answers.yaml"
 run plan answer "$todo"
 
 step "Plan again: both demo forms should be ready"

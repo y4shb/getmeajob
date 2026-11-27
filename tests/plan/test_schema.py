@@ -88,7 +88,9 @@ def test_ashby_falls_back_when_request_fails(
     fixture_client: Callable[[Path], HttpClient],
 ) -> None:
     empty = tmp_path / "no-fixtures"
-    empty.mkdir()
+    page = empty / "http/jobs.ashbyhq.com/samplesystems" / demo_jobs[1].job_id / "application.json"
+    page.parent.mkdir(parents=True)
+    page.write_text("{}", encoding="utf-8")  # the page itself, read once to check robots.txt
     seen: list[str] = []
 
     def reader(url: str) -> list[Question]:

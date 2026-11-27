@@ -15,8 +15,10 @@ from dataclasses import dataclass, field
 
 from playwright.sync_api import Locator, Page
 
+from getmeajob.apply.fields import by_id, click, fill_text, safely
+from getmeajob.apply.menus import react_select
 from getmeajob.apply.values import EducationRow, EmploymentRow, match_degree
-from getmeajob.apply.widgets import by_id, choose, fill_text, react_select, safely
+from getmeajob.apply.widgets import choose
 from getmeajob.plan.options import MatchResult, match_option
 
 ANCHORS = {"education": "school--{i}", "employment": "company-name-{i}"}
@@ -67,9 +69,8 @@ def _ensure_row(page: Page, section: str, i: int) -> bool:
     if holder.count() == 0:
         return False
     button = holder.first.locator("button", has_text=ADD_ANOTHER)
-    if button.count() == 0:
+    if button.count() == 0 or click(button.first):
         return False
-    button.first.click()
     try:
         by_id(page, anchor.format(i=i)).first.wait_for(state="attached", timeout=4000)
     except Exception:

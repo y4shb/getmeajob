@@ -75,6 +75,8 @@ def test_settings_defaults_file_and_env(
 ) -> None:
     settings = load_settings(tmp_ws)
     assert settings.fixtures is None and not settings.offline and settings.retries == 3
+    tmp_ws.settings_path.write_text("offline: true\n", encoding="utf-8")
+    assert not load_settings(tmp_ws).offline  # only fixtures switch getmeajob offline
     tmp_ws.settings_path.write_text("fixtures: fx\nmin_interval: 0\n", encoding="utf-8")
     settings = load_settings(tmp_ws)
     assert settings.fixtures == tmp_ws.root / "fx" and settings.min_interval == 0.0

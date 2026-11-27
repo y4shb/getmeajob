@@ -11,7 +11,6 @@ import functools
 import re
 from collections.abc import Iterable
 
-from getmeajob.models import Job
 from getmeajob.textutil import norm_label
 
 
@@ -50,10 +49,3 @@ def countries_in(text: str, extra_names: Iterable[str] = ()) -> list[str]:
         if any(_alias_regex(a).search(text) for a in names if a) and country not in found:
             found.append(country)
     return found
-
-
-def is_remote(job: Job) -> bool:
-    if job.remote is True:
-        return True
-    words = f"{job.location or ''} {job.workplace or ''}".casefold()
-    return re.search(r"\bremote\b", words) is not None

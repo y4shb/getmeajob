@@ -92,13 +92,21 @@ def test_detectors_stay_quiet_on_plain_forms(open_mock: Callable[..., Any]) -> N
     from getmeajob.apply import guards
 
     for name in ("greenhouse", "ashby"):
-        page = open_mock(name)
-        assert guards.detect_captcha(page) is None  # "protected by reCAPTCHA" is not a check
-        assert guards.detect_account_wall(page) is None
-        assert guards.detect_automation_refusal(page) is None
-        assert guards.detect_success(page) is False
-        assert guards.detect_email_code(page) is False
-        assert guards.collect_errors(page) == []
+        scan = guards.scan_page(open_mock(name))
+        assert guards.hard_stop(scan) is None  # "protected by reCAPTCHA" is not a check
+        assert guards.success_in(scan) is False
+        assert guards.email_code_in(scan) is False
+        assert scan.errors == []
+
+
+def test_job_text_about_bots_is_not_a_stop(open_mock: Callable[..., Any]) -> None:
+    from getmeajob.apply import guards
+
+    scan = guards.scan_page(open_mock("greenhouse"))
+    for phrase in ("suspicious activity", "complete the challenge", "never use automated tools"):
+        assert phrase in scan.body and phrase not in scan.form
+    assert guards.hard_stop(scan) is None
+    assert guards.hard_stop(guards.PageScan(form=scan.body)) is not None  # the old way stopped
 
 
 def test_errors_success_and_code_are_read(open_mock: Callable[..., Any]) -> None:
@@ -106,9 +114,9 @@ def test_errors_success_and_code_are_read(open_mock: Callable[..., Any]) -> None
 
     page = open_mock("greenhouse", "code=1")
     page.click("#submit-app")
-    errors = guards.collect_errors(page)
+    errors = guards.scan_page(page).errors
     assert any("First Name is required" in e for e in errors)
     assert any(e.startswith("field marked invalid") for e in errors)
     page = open_mock("ashby")
     page.evaluate("document.getElementById('app').innerHTML = '<h1>Application submitted</h1>'")
-    assert guards.detect_success(page)
+    assert guards.success_in(guards.scan_page(page))

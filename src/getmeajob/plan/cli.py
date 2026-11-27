@@ -6,7 +6,7 @@ plan unknowns [--stub FILE]                  open questions, once per label
 plan answer FILE                             merge answers into answers.yaml
 plan review [KEY...]                         label -> answer table, unknowns, drafts
 plan draft [--budget N] [--provider P] [KEY...]   draft free-text answers to review
-plan approve KEY                             mark a job's drafts as reviewed
+plan approve KEY | --all                     mark drafts and agent answers as reviewed
 """
 
 from __future__ import annotations
@@ -196,7 +196,7 @@ def _review(args: argparse.Namespace, ctx: Context, words: list[str]) -> int:
         out.table(table.needs_review[:10], ["job_key", "label", "value"], max_col=50)
     nxt = "getmeajob plan unknowns" if table.unknowns else None
     if table.needs_review:
-        nxt = "check the drafts, then: getmeajob plan approve KEY"
+        nxt = "check the drafts, then: getmeajob plan approve KEY (or --all)"
     out.done(f"{len(rows)} answer row(s), {table.skipped} left blank on purpose.", nxt)
     return 0
 
@@ -222,15 +222,16 @@ def _draft(args: argparse.Namespace, ctx: Context, words: list[str]) -> int:
 
 
 def _approve(args: argparse.Namespace, ctx: Context, words: list[str]) -> int:
-    (key,) = _need(words, 1, "plan approve KEY")
+    key = None if args.all else _need(words, 1, "plan approve KEY  (or --all)")[0]
     count = approve_job(ctx.ws, key)
+    scope = "in answers.yaml" if key is None else f"for {key}"
     if ctx.out.json_mode:
         ctx.out.emit({"key": key, "approved": count})
         return 0
     if count:
-        ctx.out.done(f"Approved {count} drafted answer(s) for {key}.", f"getmeajob plan {key}")
+        ctx.out.done(f"Approved {count} answer(s) {scope}.", f"getmeajob plan {key or ''}".strip())
     else:
-        ctx.out.done(f"No drafts are waiting for review for {key}.")
+        ctx.out.done(f"No answers are waiting for review {scope}.")
     return 0
 
 
@@ -250,6 +251,8 @@ def _cmd_plan(args: argparse.Namespace, ctx: Context) -> int:
     command = words[0] if words and words[0] in SUBCOMMANDS else None
     if args.stub and command != "unknowns":
         raise GetmeajobError("--stub only works with `getmeajob plan unknowns`.")
+    if args.all and command != "approve":
+        raise GetmeajobError("--all only works with `getmeajob plan approve`.")
     if command is None:
         return _plan(args, ctx, words)
     return HANDLERS[command](args, ctx, words[1:])
@@ -277,6 +280,9 @@ def register(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
         help="plan ranked jobs scoring at least N (default: thresholds.shortlist)",
     )
     parser.add_argument("--stub", metavar="FILE", help="plan unknowns: write a file to fill in")
+    parser.add_argument(
+        "--all", action="store_true", help="plan approve: every answer waiting for review"
+    )
     parser.add_argument(
         "--budget",
         type=int,

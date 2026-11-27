@@ -1,13 +1,7 @@
-"""Command output: compact tables for people, JSON for agents.
+"""Command output: compact tables for people, one line of JSON for agents (`--json`).
 
-How handlers use it:
-- `emit(data)` is the machine-readable result. With `--json` it prints one line of
-  JSON; without it, a readable YAML-style dump.
-- `line()`, `table()` and `done()` are for people. They print nothing with `--json`,
-  so stdout stays pure JSON for agents.
-- `--quiet` silences everything except `warn()`.
-
-A typical handler: `if ctx.out.json_mode: ctx.out.emit(result) else: ctx.out.table(...)`.
+`emit()` is the machine result; `line()`, `table()` and `done()` print nothing with
+`--json`; `--quiet` silences everything except `warn()`.
 """
 
 from __future__ import annotations

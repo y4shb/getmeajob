@@ -55,7 +55,7 @@ def test_builtins_and_plugins(plugins: list[FakeEntryPoint]) -> None:
         FakeEntryPoint("clash", taken),
     ]
     sources = registry.all_sources()
-    assert list(sources)[:6] == list(registry.BUILTIN_ORDER)
+    assert list(sources)[:6] == list(registry.builtin_sources())
     assert isinstance(sources["samplesource"], SampleSource)
     assert type(sources["greenhouse"]).__name__ == "GreenhouseSource"
     problems = "\n".join(registry.plugin_problems())

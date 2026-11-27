@@ -54,11 +54,6 @@ def form_target(url: str, settings: Settings) -> str:
     if url.startswith("file://"):
         return url
     if settings.fixtures is None:
-        if settings.offline:
-            raise FormUnavailable(
-                "getmeajob is in offline mode, so it will not open real forms.",
-                hint="Set offline: false in settings.yaml to apply for real.",
-            )
         return url
     root = settings.fixtures
     mapping = read_json(root / FORMS_FILE, default={})

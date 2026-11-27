@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+from email.message import Message
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from getmeajob.agents.install import flatten_text
+from getmeajob.agents import install
+from getmeajob.agents.install import Assets, flatten_text, plugin_commands
 from getmeajob.cli import main
+from getmeajob.errors import GetmeajobError
 
 
 def _json(capsys: pytest.CaptureFixture[str]) -> dict[str, Any]:
@@ -79,6 +82,21 @@ def test_install_without_flat_prints_the_plugin_commands(
     assert (repo / ".claude-plugin" / "marketplace.json").is_file()
     assert install == "claude plugin install getmeajob@getmeajob --scope project"
     assert not (tmp_path / ".claude").exists()  # printing only, nothing copied
+
+
+def test_installed_wheel_names_the_repository_from_its_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    meta = Message()
+    meta["Project-URL"] = "Homepage, https://example.com/getmeajob"
+    meta["Project-URL"] = "Repository, https://github.com/example-org/getmeajob.git"
+    monkeypatch.setattr(install.metadata, "metadata", lambda name: meta)
+    wheel = Assets(tmp_path / "_agents")  # no .claude-plugin next to it, as in a wheel
+    add = plugin_commands(wheel)[0]
+    assert add == "claude plugin marketplace add example-org/getmeajob"
+    monkeypatch.setattr(install.metadata, "metadata", lambda name: Message())
+    with pytest.raises(GetmeajobError, match="does not name its repository"):
+        plugin_commands(wheel)
 
 
 def test_flatten_text_rewrites_plugin_links_only() -> None:

@@ -1,27 +1,16 @@
-"""Workspace storage: the job store and the append-only logs.
-
-Logs (`events.jsonl`, `queue.jsonl`, `ledger.jsonl`) are only ever appended to.
-Snapshots (`jobs.jsonl`) are rewritten atomically (temp file, then rename).
-The file helpers live in `getmeajob.files` and are re-exported here.
-"""
+"""Workspace storage: the job store and the append-only logs (events, queue, ledger)."""
 
 from __future__ import annotations
 
 import dataclasses
+import difflib
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from getmeajob.files import (
-    append_jsonl,
-    atomic_write_bytes,
-    atomic_write_text,
-    now_iso,
-    read_json,
-    read_jsonl,
-    write_json_atomic,
-    write_jsonl_atomic,
-)
+from getmeajob.errors import GetmeajobError
+from getmeajob.files import append_jsonl, read_jsonl, write_jsonl_atomic
+from getmeajob.files import now_iso as now_iso
 from getmeajob.models import (
     FORWARD_ORDER,
     SIDE_STATES,
@@ -36,25 +25,8 @@ from getmeajob.models import (
 from getmeajob.textutil import short_hash
 from getmeajob.workspace import Workspace
 
-__all__ = [
-    "HUMAN_SOURCES",
-    "JobStore",
-    "Ledger",
-    "QueueLog",
-    "StatusLog",
-    "UpsertResult",
-    "append_jsonl",
-    "atomic_write_bytes",
-    "atomic_write_text",
-    "now_iso",
-    "read_json",
-    "read_jsonl",
-    "transition_allowed",
-    "write_json_atomic",
-    "write_jsonl_atomic",
-]
-
 HUMAN_SOURCES = frozenset({"manual", "xlsx"})
+AUTO_CLOSERS = frozenset({"source", "liveness"})
 
 
 class _LogFile:
@@ -86,6 +58,7 @@ class UpsertResult:
     new: list[str] = dataclasses.field(default_factory=list)
     changed: list[str] = dataclasses.field(default_factory=list)
     unchanged: list[str] = dataclasses.field(default_factory=list)
+    reopened: list[str] = dataclasses.field(default_factory=list)
 
 
 def _job_signature(job: Job) -> tuple[str, str, str, str]:
@@ -112,16 +85,28 @@ class JobStore:
     def get(self, key: str) -> Job | None:
         return self.load().get(key)
 
-    def matching(self, key: str) -> list[Job]:
-        """The job with exactly this key, else every job whose key contains `key` (any case).
-
-        Lets people type part of a key ("1001" for `greenhouse:examplecorp:1001`).
-        """
+    def find(self, key: str) -> Job:
+        """The job with this key, else the one job whose key contains `key` (any case)."""
         jobs = self.load()
         if key in jobs:
-            return [jobs[key]]
+            return jobs[key]
         part = key.casefold()
-        return [job for k, job in jobs.items() if part in k.casefold()]
+        matches = [k for k in jobs if part and part in k.casefold()]
+        if len(matches) == 1:
+            return jobs[matches[0]]
+        if matches:
+            raise GetmeajobError(
+                f"'{key}' matches {len(matches)} jobs.",
+                hint=f"Did you mean {', '.join(matches[:3])}? Give more of the key.",
+            )
+        close = difflib.get_close_matches(key, list(jobs), n=3, cutoff=0.6)
+        if close:
+            hint = f"Did you mean {', '.join(close)}?"
+        elif jobs:
+            hint = "Run `getmeajob rank --all` to see the keys."
+        else:
+            hint = "No jobs are stored yet. Run `getmeajob source` first."
+        raise GetmeajobError(f"No job with the key '{key}'.", hint=hint)
 
     def _save(self, jobs: Mapping[str, Job]) -> None:
         write_jsonl_atomic(self.path, (job.to_dict() for job in jobs.values()))
@@ -130,7 +115,7 @@ class JobStore:
         """Add or refresh jobs. Keeps `first_seen`, sets `last_seen` to `now`.
 
         "changed" means the title, location, description or url changed, or a closed job
-        came back. An empty incoming description keeps the stored one (some list
+        came back ("reopened"). An empty incoming description keeps the stored one (some list
         endpoints leave it out) and does not count as a change.
         """
         stored = self.load()
@@ -157,6 +142,8 @@ class JobStore:
                 continue
             seen.add(job.key)
             reopened = old.status == "closed" and merged.status != "closed"
+            if reopened:
+                result.reopened.append(job.key)
             if reopened or _job_signature(old) != _job_signature(merged):
                 result.changed.append(job.key)
             else:
@@ -186,17 +173,20 @@ def _forward_index(status: AppStatus) -> int:
     return FORWARD_ORDER.index(status)
 
 
-def transition_allowed(current: AppStatus | None, new: AppStatus, source: str) -> bool:
+def transition_allowed(
+    current: AppStatus | None, new: AppStatus, source: str, closed_by: str = ""
+) -> bool:
     """The status rules. Humans (`manual`, `xlsx`) may set anything; automatic sources
     only move forward, may close a job only before `applied`, may mark `ghosted` only
     from `applied` or `screening`, and never move a job out of a side state, except that
-    sourcing may reopen a `closed` posting that came back (back to `discovered`)."""
+    sourcing may reopen a posting that came back (back to `discovered`) when `source` or
+    `liveness` closed it (`closed_by`)."""
     if current == new:
         return False
     if source in HUMAN_SOURCES:
         return True
     if current == AppStatus.closed and new == AppStatus.discovered and source == "source":
-        return True
+        return closed_by in AUTO_CLOSERS
     if current in SIDE_STATES:
         return False
     if new in FORWARD_ORDER:
@@ -216,41 +206,38 @@ class StatusLog:
         self.path = ws.events_path
         self._file = _LogFile(self.path)
         self._events: list[StatusEvent] = []
-        self._current: dict[str, AppStatus] = {}
+        self._last: dict[str, StatusEvent] = {}
 
     def _refresh(self) -> None:
         if not self._file.stale():
             return
         self._events = [StatusEvent.from_dict(r) for r in read_jsonl(self.path)]
-        self._current = {}
-        for event in self._events:
-            self._current[event.job_key] = event.status
+        self._last = {event.job_key: event for event in self._events}
         self._file.mark_fresh()
 
     def record(self, key: str, status: AppStatus, source: str, note: str = "") -> bool:
         """Write a status change if the rules allow it. Returns whether it was written."""
         self._refresh()
         status = AppStatus(status)
-        if not transition_allowed(self._current.get(key), status, source):
+        last = self._last.get(key)
+        current, closed_by = (last.status, last.source) if last else (None, "")
+        if not transition_allowed(current, status, source, closed_by):
             return False
         event = StatusEvent(ts=now_iso(), job_key=key, status=status, source=source, note=note)
         append_jsonl(self.path, event.to_dict())
         self._events.append(event)
-        self._current[key] = status
+        self._last[key] = event
         self._file.mark_fresh()
         return True
 
     def current(self, key: str) -> AppStatus | None:
         self._refresh()
-        return self._current.get(key)
+        last = self._last.get(key)
+        return last.status if last else None
 
     def history(self, key: str) -> list[StatusEvent]:
         self._refresh()
         return [e for e in self._events if e.job_key == key]
-
-    def current_all(self) -> dict[str, AppStatus]:
-        self._refresh()
-        return dict(self._current)
 
 
 # ------------------------------------------------------------------- queue

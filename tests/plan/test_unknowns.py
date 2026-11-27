@@ -133,7 +133,10 @@ def test_review_table_dedupes_rows(planned_ws: Workspace) -> None:
     table = review_table(planned_ws, None)
     emails = [r for r in table.rows if r[0] == "Email"]
     assert emails == [("Email", "alex@example.com", "rule:email", 2)]
-    assert [g.label for g in table.unknowns] == ["Why do you want to join Example Corp?"]
+    assert [g.label for g in table.unknowns] == [
+        "Why do you want to join Example Corp?",
+        "Will you now or in the future require sponsorship for employment visa status?",
+    ]
     assert table.skipped == 3 and table.needs_review == []
     only_ashby = review_table(
         planned_ws, ["ashby:samplesystems:5a1e0000-0000-4000-8000-000000000001"]

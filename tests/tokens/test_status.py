@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
 from getmeajob.cli import main
-from getmeajob.models import QueueKind
-from getmeajob.store import QueueLog
+from getmeajob.files import now_iso
+from getmeajob.models import LedgerEntry, QueueKind
+from getmeajob.store import Ledger, QueueLog
 from getmeajob.workspace import Workspace
 
 Cli = Callable[..., tuple[int, str, str]]
+GH = "greenhouse:examplecorp:1001"
+ASHBY = "ashby:samplesystems:5a1e0000-0000-4000-8000-000000000001"
 
 
 @pytest.mark.parametrize("command", [["status"], ["context", "x"]])
@@ -50,7 +54,7 @@ def test_empty_workspace_suggests_source(demo_ws: Workspace, cli: Cli) -> None:
 
 def test_status_json_after_the_pipeline(pipeline_ws: Workspace, cli: Cli) -> None:
     data = json.loads(cli(pipeline_ws, "--json", "status")[1])
-    assert data["next"] == "getmeajob plan unknowns --stub todo.yaml"
+    assert data["next"] == "getmeajob plan unknowns --stub answers-todo.yaml"
     assert data["jobs"] == {"found": 8, "open": 8, "eligible": 4, "tracked": 4}
     assert data["queue"] == {"needs_answers": 1}
     assert data["plans"]["ready"] == 1 and data["plans"]["needs_answers"] == 1
@@ -63,3 +67,25 @@ def test_questions_drop_once_applied(pipeline_ws: Workspace, cli: Cli) -> None:
     assert data["questions"] == []
     assert data["queue"] == {}
     assert data["next"] == "getmeajob apply --mode dry"
+
+
+def test_after_a_dry_run_status_suggests_the_hold_run(pipeline_ws: Workspace, cli: Cli) -> None:
+    assert cli(pipeline_ws, "track", "set", GH, "applied")[0] == 0
+    entry = {"ts": now_iso(), "run_id": "r1", "job_key": ASHBY, "company": "", "title": ""}
+    Ledger(pipeline_ws).append(LedgerEntry.from_dict({**entry, "mode": "dry", "status": "dry_ok"}))
+    data = json.loads(cli(pipeline_ws, "--json", "status")[1])
+    assert data["next"] == "getmeajob apply --mode hold --headed"
+
+
+def test_status_suggests_nothing_once_the_tracker_is_current(
+    pipeline_ws: Workspace, cli: Cli
+) -> None:
+    for key in (GH, ASHBY):
+        assert cli(pipeline_ws, "track", "set", key, "applied")[0] == 0
+    assert json.loads(cli(pipeline_ws, "--json", "status")[1])["next"] == "getmeajob report"
+    assert cli(pipeline_ws, "report")[0] == 0
+    code, out, _ = cli(pipeline_ws, "status")
+    assert code == 0 and out.splitlines()[-1] == "next: nothing to do; the tracker is up to date"
+    later = (pipeline_ws.exports_dir / "tracker.xlsx").stat().st_mtime + 10
+    os.utime(pipeline_ws.events_path, (later, later))  # the data changed after the report
+    assert json.loads(cli(pipeline_ws, "--json", "status")[1])["next"] == "getmeajob report"

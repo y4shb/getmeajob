@@ -1,13 +1,6 @@
 """`run_source`: fetch boards and feeds, store jobs and job text, and work out the diff.
 
-Per run:
-1. Boards are grouped by ATS. Groups run side by side; boards in a group run one after
-   another, and a bot check on one board skips the rest of that group.
-2. All jobs are upserted into `data/jobs.jsonl` (`first_seen` kept), job text goes to
-   `data/jd/<key>.txt`, and new jobs get a `discovered` status event.
-3. A job that is missing from a board that answered in full is closed, with a `closed`
-   status event. A board that failed (or answered only in part) closes nothing.
-4. A summary goes to `data/runs/<ts>.json`.
+A job missing from a board that answered in full is closed; a failed board closes nothing.
 """
 
 from __future__ import annotations
@@ -18,14 +11,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from getmeajob.errors import BotWallError, GetmeajobError
+from getmeajob.errors import BotWallError, ConfigError, GetmeajobError
 from getmeajob.files import atomic_write_text, now_iso, write_json_atomic
 from getmeajob.http import HttpClient
 from getmeajob.models import AppStatus, Board, Job
 from getmeajob.sources.base import SourceResult
 from getmeajob.sources.boards import board_id
 from getmeajob.sources.feeds import FEEDS, harvest_boards
-from getmeajob.sources.registry import all_sources
+from getmeajob.sources.registry import all_sources, get_source
 from getmeajob.store import JobStore, StatusLog
 from getmeajob.workspace import Workspace
 
@@ -40,7 +33,6 @@ class SourceRunSummary:
     unchanged: int
     errors: list[str]
     per_board: list[dict[str, Any]]
-    # Additions beyond the planned contract:
     new_keys: list[str] = field(default_factory=list)
     changed_keys: list[str] = field(default_factory=list)
     closed_keys: list[str] = field(default_factory=list)
@@ -182,6 +174,49 @@ def _fetch_feeds(
     return jobs
 
 
+def parse_feeds(text: str | None) -> list[str]:
+    names = [n.strip().casefold() for n in (text or "").split(",") if n.strip()]
+    unknown = [n for n in names if n not in FEEDS]
+    if unknown:
+        raise ConfigError(
+            f"Unknown feed: {', '.join(unknown)}.",
+            hint=f"Feeds are {', '.join(FEEDS)}, for example --feeds remotive,hn.",
+        )
+    return list(dict.fromkeys(names))
+
+
+def select_boards(
+    boards: list[Board], specs: Sequence[str] | None, companies: Sequence[str] | None
+) -> list[Board]:
+    """Enabled boards, or the ones named with --board / --company (enabled or not)."""
+    if not specs and not companies:
+        return [b for b in boards if b.enabled]
+    picked: list[Board] = []
+    by_id = {board_id(b): b for b in boards}
+    for spec in specs or ():
+        ats, sep, slug = spec.partition(":")
+        if not sep or not ats.strip() or not slug.strip():
+            raise ConfigError(
+                f"--board {spec!r} is not in the form ats:slug.",
+                hint="For example: --board greenhouse:examplecorp",
+            )
+        source = get_source(ats)
+        found = by_id.get((source.name, slug.strip().casefold()))
+        picked.append(found or Board(company=slug.strip(), ats=source.name, slug=slug.strip()))
+    for wanted in companies or ():
+        key = wanted.strip().casefold()
+        matches = [b for b in boards if b.company.casefold() == key] or [
+            b for b in boards if key and key in b.company.casefold()
+        ]
+        if not matches:
+            raise ConfigError(
+                f"No board in companies.yaml matches the company {wanted!r}.",
+                hint="Run `getmeajob boards` to see the names.",
+            )
+        picked += matches
+    return list({board_id(b): b for b in picked}.values())
+
+
 def run_source(
     ws: Workspace,
     client: HttpClient,
@@ -221,7 +256,7 @@ def run_source(
     _write_jd(ws, [*fetched, *feed_jobs])
     for key in upsert.new:
         events.record(key, AppStatus.discovered, "source")
-    for key in upsert.changed:  # only a closed posting that came back actually changes
+    for key in upsert.reopened:
         events.record(key, AppStatus.discovered, "source", note="back on the board")
 
     seen = {job.key for job in fetched}
@@ -258,3 +293,24 @@ def run_source(
     record.update(started=started, finished=now_iso(), feeds=list(feeds))
     write_json_atomic(path, record)
     return summary
+
+
+def diff_rows(summary: SourceRunSummary, jobs: dict[str, Job]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for change, keys in (
+        ("new", summary.new_keys),
+        ("changed", summary.changed_keys),
+        ("closed", summary.closed_keys),
+    ):
+        for key in keys:
+            job = jobs.get(key)
+            rows.append(
+                {
+                    "change": change,
+                    "company": job.company if job else "",
+                    "title": job.title if job else "",
+                    "location": job.location if job else "",
+                    "key": key,
+                }
+            )
+    return rows

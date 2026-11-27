@@ -16,21 +16,13 @@ import re
 from playwright.sync_api import Page
 
 from getmeajob.apply.base import FillReport, click_submit, missing_required, schema_options
+from getmeajob.apply.fields import by_id, fill_text, quote_attr, upload_file
+from getmeajob.apply.menus import Matcher, react_select
+from getmeajob.apply.repeater import fill_section
 from getmeajob.apply.values import dial_code, education_rows, employment_rows, local_phone
-from getmeajob.apply.widgets import (
-    Matcher,
-    ashby_choice,
-    by_id,
-    check_multi,
-    choose,
-    fill_repeater,
-    fill_text,
-    location_typeahead,
-    quote_attr,
-    react_select,
-    upload_file,
-)
+from getmeajob.apply.widgets import ashby_choice, check_multi, choose, location_typeahead
 from getmeajob.models import Plan, PlannedAnswer, QuestionType
+from getmeajob.plan.answering import allowed_file
 from getmeajob.plan.options import MatchResult, match_option
 from getmeajob.plan.profile import Profile
 from getmeajob.workspace import Workspace
@@ -91,13 +83,13 @@ class GreenhouseFiller:
         for answer in answers:
             if answer.type in LAST or answer.type == QuestionType.hidden:
                 continue
-            problem = self._one(page, answer, profile, options, has_country)
+            problem = self._one(page, answer, profile, ws, options, has_country)
             report.add(answer.question_id, answer.label, problem)
-        report.merge(fill_repeater(page, "employment", employment_rows(profile)))
+        report.merge(fill_section(page, "employment", employment_rows(profile)))
         for answer in answers:
             if answer.type == QuestionType.education_history:
                 rows = education_rows(answer.value, profile)
-                report.merge(fill_repeater(page, "education", rows))
+                report.merge(fill_section(page, "education", rows))
         for answer in answers:
             if answer.type == QuestionType.location:
                 problem = location_typeahead(
@@ -113,13 +105,15 @@ class GreenhouseFiller:
         page: Page,
         answer: PlannedAnswer,
         profile: Profile,
+        ws: Workspace,
         options: dict[str, list[tuple[str, str]]],
         has_country: bool,
     ) -> str | None:
         qid = answer.question_id
         value = answer.value
         if answer.type == QuestionType.file:
-            return upload_file(page, _sel(qid), str(value))
+            path, problem = allowed_file(ws, profile, str(value))
+            return upload_file(page, _sel(qid), path) if path else problem
         if answer.type == QuestionType.multiselect:
             return self._multi(page, qid, value, options.get(qid, []))
         if isinstance(value, list):

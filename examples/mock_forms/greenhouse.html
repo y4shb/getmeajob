@@ -9,6 +9,7 @@
   Written from scratch. It copies only structural conventions (ids equal field names,
   react-select-like widgets, checkbox ids name_optionId). No network, no external files.
   Variants by query string: ?captcha=1 ?code=1 ?account=1 ?noauto=1
+  ?untyped=1 (buttons inside the form lose type="button", so a click on one would submit)
 -->
 <style>
   :root { --ink: #1d2733; --muted: #5b6776; --line: #d5dbe3; --bad: #b3261e; --bg: #fff; }
@@ -48,6 +49,13 @@
 <main id="app">
   <h1>Senior Backend Engineer</h1>
   <p class="note">Example Corp. Remote - Worldwide. This is a mock form for the getmeajob demo; nothing is sent anywhere.</p>
+  <section class="job-post" id="job-description">
+    <h2>About the role</h2>
+    <p>You will build the services that detect suspicious activity in our payment systems.</p>
+    <p>We hope you will complete the challenge of moving our oldest jobs to Kubernetes.</p>
+    <p>We never use automated tools to screen candidates. A person reads every application.</p>
+    <p>You cannot be a bot about code review here: we value careful, kind feedback.</p>
+  </section>
   <div id="variant-slot"></div>
   <form id="application-form" novalidate>
     <h2>Apply for this job</h2>
@@ -290,12 +298,15 @@
       src: 'recaptcha/api2/bframe.html?hl=en&k=demo', width: '400', height: '300' }));
   }
   if (params.get('noauto') === '1') {
-    slot.append(el('p', { class: 'notice' }, 'Please do not use automated tools, bots or AI agents to complete this application. ' +
+    form.prepend(el('p', { class: 'notice' }, 'Please do not use automated tools, bots or AI agents to complete this application. ' +
       'Applications filled in by automated tools will be rejected.'));
+  }
+  if (params.get('untyped') === '1') {
+    form.querySelectorAll('button:not([type=submit])').forEach((b) => b.removeAttribute('type'));
   }
   if (params.get('account') === '1') {
     form.hidden = true;
-    const wall = el('section', { id: 'account-wall' });
+    const wall = el('form', { id: 'account-wall' });
     wall.append(el('h2', {}, 'Create an account to apply'), el('label', { for: 'acct-email' }, 'Email'),
       el('input', { id: 'acct-email', type: 'email' }), el('label', { for: 'acct-password' }, 'Password'),
       el('input', { id: 'acct-password', type: 'password' }), el('button', { type: 'button' }, 'Create account'));

@@ -4,7 +4,8 @@ import dataclasses
 
 import pytest
 
-from getmeajob.errors import StoreError
+from getmeajob.errors import GetmeajobError, StoreError
+from getmeajob.files import append_jsonl, now_iso, read_json, read_jsonl, write_json_atomic
 from getmeajob.models import (
     ApplyMode,
     ApplyStatus,
@@ -13,17 +14,7 @@ from getmeajob.models import (
     LedgerEntry,
     QueueKind,
 )
-from getmeajob.store import (
-    JobStore,
-    Ledger,
-    QueueLog,
-    StatusLog,
-    append_jsonl,
-    now_iso,
-    read_json,
-    read_jsonl,
-    write_json_atomic,
-)
+from getmeajob.store import JobStore, Ledger, QueueLog, StatusLog
 from getmeajob.workspace import Workspace
 
 T1 = "2026-11-01T00:00:00Z"
@@ -87,7 +78,26 @@ def test_mark_closed_and_reopen_counts_as_changed(tmp_ws: Workspace) -> None:
         "greenhouse:examplecorp:1"
     ]
     assert store.mark_closed(["greenhouse:examplecorp:1"], T2) == []
-    assert store.upsert([_job("1")], T2).changed == ["greenhouse:examplecorp:1"]
+    result = store.upsert([_job("1")], T2)
+    assert result.changed == result.reopened == ["greenhouse:examplecorp:1"]
+
+
+def test_find_takes_a_unique_part_of_a_key(tmp_ws: Workspace) -> None:
+    store = JobStore(tmp_ws)
+    with pytest.raises(GetmeajobError) as empty:
+        store.find("1001")
+    assert "Run `getmeajob source` first" in str(empty.value.hint)
+    store.upsert([_job("1001"), _job("1002")], T1)
+    assert store.find(KEY).key == KEY
+    assert store.find("ExampleCorp:1002").key == "greenhouse:examplecorp:1002"
+    with pytest.raises(GetmeajobError) as several:
+        store.find("examplecorp")
+    assert "matches 2 jobs" in several.value.message
+    assert "Did you mean greenhouse:examplecorp:1001" in str(several.value.hint)
+    with pytest.raises(GetmeajobError) as near:
+        store.find("greenhouse:examplecorp:1009")
+    assert near.value.message == "No job with the key 'greenhouse:examplecorp:1009'."
+    assert "Did you mean" in str(near.value.hint)
 
 
 def test_status_forward_only_for_automatic(tmp_ws: Workspace) -> None:
@@ -116,7 +126,7 @@ def test_status_manual_can_go_back(tmp_ws: Workspace) -> None:
     assert log.record(KEY, AppStatus.rejected, "xlsx")
     assert log.record(KEY, AppStatus.screening, "manual")  # out of a side state by hand
     assert log.current(KEY) == AppStatus.screening
-    assert StatusLog(tmp_ws).current_all() == {KEY: AppStatus.screening}  # read back from disk
+    assert StatusLog(tmp_ws).current(KEY) == AppStatus.screening  # read back from disk
 
 
 def test_closed_not_after_applied(tmp_ws: Workspace) -> None:
@@ -209,3 +219,13 @@ def test_source_reopens_closed_posting(tmp_ws: Workspace) -> None:
     assert not log.record("greenhouse:examplecorp:1", AppStatus.discovered, "rank")
     assert log.record("greenhouse:examplecorp:1", AppStatus.discovered, "source")
     assert log.current("greenhouse:examplecorp:1") == AppStatus.discovered
+    assert log.record("greenhouse:examplecorp:1", AppStatus.closed, "liveness")
+    assert log.record("greenhouse:examplecorp:1", AppStatus.discovered, "source")
+
+
+def test_source_never_reopens_a_job_a_person_closed(tmp_ws: Workspace) -> None:
+    log = StatusLog(tmp_ws)
+    assert log.record(KEY, AppStatus.discovered, "source")
+    assert log.record(KEY, AppStatus.closed, "manual")
+    assert not log.record(KEY, AppStatus.discovered, "source")
+    assert StatusLog(tmp_ws).current(KEY) == AppStatus.closed

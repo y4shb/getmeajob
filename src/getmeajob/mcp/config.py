@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-CLIENTS = ("claude-desktop", "claude-code", "codex", "chatgpt")
+CLIENTS = ("claude-desktop", "claude-code", "codex")
 SERVER_ARGS = ["-m", "getmeajob", "mcp"]
 
 DESKTOP_FILES = (
@@ -106,7 +106,7 @@ def config_lines(data: dict[str, Any], client: str = "all") -> list[str]:
         )
     if client in ("all", "codex"):
         blocks.append(["Codex CLI: add this to ~/.codex/config.toml.", data["codex"]])
-    if client in ("all", "chatgpt"):
+    if client == "all":
         blocks.append([data["chatgpt"]])
     lines: list[str] = []
     for block in blocks:

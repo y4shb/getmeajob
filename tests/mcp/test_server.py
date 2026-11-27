@@ -33,6 +33,7 @@ EXPECTED = {
     "getmeajob_context",
 }
 QUESTION = "Why do you want to join Example Corp?"
+SPONSOR = "Will you now or in the future require sponsorship for employment visa status?"
 
 
 @pytest.fixture
@@ -120,8 +121,9 @@ def test_answer_refuses_empty_answers(planned_ws: Workspace) -> None:
 
 def test_answer_saves_what_the_user_gave_and_plan_uses_it(planned_ws: Workspace) -> None:
     answer = "I like building billing tools for small shops."
-    text, error = call(planned_ws, "getmeajob_answer", {"answers": {QUESTION: answer}})
-    assert not error and "Saved 1 answer(s) for every job" in text
+    answers = {QUESTION: answer, SPONSOR: "No"}
+    text, error = call(planned_ws, "getmeajob_answer", {"answers": answers})
+    assert not error and "Saved 2 answer(s) for every job" in text
     assert answer in planned_ws.answers_path.read_text(encoding="utf-8")
     text, error = call(planned_ws, "getmeajob_plan")
     assert not error and "2 ready, 0 need answers" in text

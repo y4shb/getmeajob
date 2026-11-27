@@ -6,3 +6,5 @@
 # and other docs get no allowance at all.
 ^email:(NOTICE|pyproject\.toml):
 ^personal-url:(NOTICE|README\.md|pyproject\.toml):[^=]*=(https?://)?(www\.)?github\.com/
+# Synthetic example accounts used in tests and docs.
+^personal-url:[^=]*=(https?://)?(www\.)?github\.com/example[-\w]*/

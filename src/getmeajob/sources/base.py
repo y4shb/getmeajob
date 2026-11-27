@@ -27,7 +27,6 @@ class SourceResult:
     jobs: list[Job]
     board_name: str | None = None
     error: str | None = None
-    # Additions beyond the planned contract (all optional):
     skipped: list[str] = field(default_factory=list)  # one reason per job left out
     notes: list[str] = field(default_factory=list)  # things worth telling the user
     partial: bool = False  # the list was cut short, so missing jobs are not closed

@@ -21,8 +21,8 @@ NEED: dict[QueueKind, str] = {
         "from your email."
     ),
     QueueKind.needs_answers: (
-        "Answer the open questions: run `getmeajob plan unknowns --stub todo.yaml`, fill in "
-        "todo.yaml, then `getmeajob plan answer todo.yaml` and `getmeajob plan`."
+        "Answer the open questions: run `getmeajob plan unknowns --stub answers-todo.yaml`, "
+        "fill it in, then `getmeajob plan answer answers-todo.yaml` and `getmeajob plan`."
     ),
     QueueKind.captcha: (
         "The site showed a bot check, which getmeajob never solves. Apply by hand at the "

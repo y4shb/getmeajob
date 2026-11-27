@@ -9,13 +9,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from getmeajob.errors import GetmeajobError
-from getmeajob.rank.cli import find_job
 from getmeajob.rank.score import job_text
 from getmeajob.resume.bank import load_bank, parse_bank
 from getmeajob.resume.keywords import coverage
 from getmeajob.resume.lint import lint_text
 from getmeajob.resume.store import list_roles, pick_for_job, role_for_key
 from getmeajob.resume.tailor import DEFAULT_MAX_BULLETS, bank_terms, tailor
+from getmeajob.store import JobStore
 from getmeajob.textutil import truncate
 from getmeajob.yamlio import load_yaml
 
@@ -34,7 +34,7 @@ def _shown(path: Path, ctx: Context) -> str:
 
 def _cmd_tailor(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     bank = load_bank(ctx.ws)
     result = tailor(ctx.ws, job, job_text(ctx.ws, job), bank, max_bullets_per_role=args.max_bullets)
     report = result.report
@@ -77,7 +77,7 @@ def resolve_role_dir(ctx: Context, target: str) -> Path:
         return named[0]
     job = None
     with contextlib.suppress(GetmeajobError):
-        job = find_job(ctx, target)
+        job = JobStore(ctx.ws).find(target)
     if job is not None:
         found = role_for_key(ctx.ws, job.key)
         if found is not None:
@@ -113,7 +113,7 @@ def _cmd_render(args: argparse.Namespace, ctx: Context) -> int:
 
 def _cmd_keywords(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     if args.file:
         path = Path(args.file)
         if not path.is_file():
@@ -183,7 +183,7 @@ def _cmd_list(args: argparse.Namespace, ctx: Context) -> int:
 
 def _cmd_pick(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
-    job = find_job(ctx, args.key)
+    job = JobStore(ctx.ws).find(args.key)
     pdf = pick_for_job(ctx.ws, job.key)
     if ctx.out.json_mode:
         ctx.out.emit({"key": job.key, "pdf": str(pdf) if pdf else None})

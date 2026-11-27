@@ -17,7 +17,7 @@ FIXTURES_ENV = "GETMEAJOB_FIXTURES"
 @dataclass
 class Settings:
     fixtures: Path | None = None
-    offline: bool = False
+    offline: bool = False  # set from `fixtures`
     min_interval: float = 1.0
     timeout: float = 25.0
     retries: int = 3
@@ -52,7 +52,7 @@ def _integer(path: Path, data: dict[str, Any], key: str, default: int, minimum: 
 def load_settings(ws: Workspace) -> Settings:
     """Settings from `settings.yaml` (defaults when missing).
 
-    GETMEAJOB_FIXTURES overrides `fixtures` and turns on offline mode. A relative
+    `fixtures` (or GETMEAJOB_FIXTURES, which wins) is the one offline switch. A relative
     `fixtures` path in the file is relative to the workspace folder.
     """
     path = ws.settings_path
@@ -68,20 +68,13 @@ def load_settings(ws: Workspace) -> Settings:
         if not fixtures.is_absolute():
             fixtures = ws.root / fixtures
 
-    offline = data.get("offline", defaults.offline)
-    if offline is None:
-        offline = defaults.offline
-    if not isinstance(offline, bool):
-        raise _bad(path, "offline", "true or false", offline)
-
     env_fixtures = os.environ.get(FIXTURES_ENV, "").strip()
     if env_fixtures:
         fixtures = Path(env_fixtures).expanduser().resolve()
-        offline = True
 
     return Settings(
         fixtures=fixtures,
-        offline=offline,
+        offline=fixtures is not None,
         min_interval=_number(path, data, "min_interval", defaults.min_interval, 0.0),
         timeout=_number(path, data, "timeout", defaults.timeout, 1.0),
         retries=_integer(path, data, "retries", defaults.retries, 0),

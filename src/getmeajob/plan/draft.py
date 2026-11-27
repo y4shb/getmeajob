@@ -1,16 +1,6 @@
-"""Optional drafting of free-text answers with a language model.
+"""Optional drafts of free-text answers by a language model, stored for your review.
 
-Only free-text unknowns (`text`, `textarea`) that are not factual get a draft: never
-questions about legal status, pay, voluntary self-ID, years, dates, contact details,
-or AI tools. The model sees a compact prompt (the question, the job, a few facts from
-the profile) and must reply ASK_HUMAN when the facts are not enough. Every draft is
-stored in answers.yaml under `by_job` with `needs_review: true`; nothing is sent until
-you read it and run `getmeajob plan approve KEY`.
-
-Providers sit behind the `DraftProvider` protocol: `AnthropicProvider` (optional
-`anthropic` package) and `CommandProvider` (any command that reads the prompt on stdin
-and prints the answer, from GETMEAJOB_LLM_COMMAND). Replies are cached in `cache/llm/`.
-Token use is estimated (characters / 4) before each call and stops at the budget.
+Only non-factual text questions are drafted; every draft waits for `getmeajob plan approve`.
 """
 
 from __future__ import annotations
@@ -37,6 +27,7 @@ from getmeajob.workspace import Workspace
 
 COMMAND_ENV = "GETMEAJOB_LLM_COMMAND"
 DEFAULT_MODEL = "claude-sonnet-5-5"
+MAX_TOKENS = 1024
 ASK_HUMAN = "ASK_HUMAN"
 DRAFT_TYPES = frozenset({QuestionType.text, QuestionType.textarea})
 FACTUAL = re.compile(
@@ -63,6 +54,7 @@ class DraftResult:
     text: str
     input_tokens: int
     output_tokens: int
+    stop_reason: str | None = None
 
 
 class DraftProvider(Protocol):
@@ -110,12 +102,19 @@ class AnthropicProvider:
             raise GetmeajobError(
                 "Could not reach Claude.", hint="Check your internet connection."
             ) from exc
+        except TypeError as exc:
+            raise GetmeajobError(
+                "The installed anthropic package is too old for drafting.",
+                hint="Update it with: pip install -U 'getmeajob[llm]'",
+            ) from exc
         if response.stop_reason == "refusal":
             text = ASK_HUMAN
         else:
             text = "".join(b.text for b in response.content if b.type == "text").strip()
         usage = response.usage
-        return DraftResult(text, int(usage.input_tokens), int(usage.output_tokens))
+        return DraftResult(
+            text, int(usage.input_tokens), int(usage.output_tokens), response.stop_reason
+        )
 
 
 class CommandProvider:
@@ -198,7 +197,8 @@ def is_draftable(u: UnknownQuestion) -> str | None:
 
 
 def _clean(text: str, n: int) -> str:
-    return truncate(one_line(text or ""), n)
+    """One line of employer text, cut to `n`, with `<` and `>` escaped so it stays data."""
+    return truncate(one_line(text or ""), n).replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _facts(profile: Profile) -> list[str]:
@@ -252,7 +252,7 @@ def draft_unknowns(
     *,
     budget_tokens: int,
     keys: Sequence[str] | None = None,
-    max_tokens: int = 400,
+    max_tokens: int = MAX_TOKENS,
 ) -> DraftReport:
     """Draft free-text unknowns within a token budget and store them for review."""
     ws.require()
@@ -291,7 +291,7 @@ def draft_unknowns(
                 report.calls += 1
                 spent = result.input_tokens + result.output_tokens
                 report.tokens_used += spent if spent > 0 else estimate
-                text = result.text.strip()
+                text = ASK_HUMAN if result.stop_reason == "max_tokens" else result.text.strip()
                 write_json_atomic(
                     cache_path,
                     {

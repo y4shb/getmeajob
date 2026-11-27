@@ -21,8 +21,9 @@ def _board_handler(state: dict[str, Any]) -> Callable[[httpx.Request], httpx.Res
         if state.get("fail"):
             return httpx.Response(503)
         if request.url.path.endswith("/jobs"):
+            title = "Engineer {}" + state.get("suffix", "")
             jobs = [
-                {"id": i, "title": f"Engineer {i}", "location": {"name": "Remote"}}
+                {"id": i, "title": title.format(i), "location": {"name": "Remote"}}
                 for i in state["ids"]
             ]
             return httpx.Response(200, json={"jobs": jobs})
@@ -66,6 +67,27 @@ def test_vanished_job_marked_closed_and_event_written(
     history = StatusLog(tmp_ws).history("greenhouse:examplecorp:2")
     assert [e.status for e in history] == [AppStatus.discovered, AppStatus.closed]
     assert history[-1].source == "source"
+
+
+def test_source_reopens_only_jobs_it_closed(
+    tmp_ws: Workspace, mock_client: Callable[..., HttpClient]
+) -> None:
+    mine, gone = "greenhouse:examplecorp:1", "greenhouse:examplecorp:2"
+    state: dict[str, Any] = {"ids": [1, 2]}
+    with mock_client(_board_handler(state)) as client:
+        run_source(tmp_ws, client, [BOARD])
+        StatusLog(tmp_ws).record(mine, AppStatus.closed, "manual")
+        state["suffix"] = " (edited)"
+        assert mine in run_source(tmp_ws, client, [BOARD]).changed_keys
+        state["ids"] = []
+        run_source(tmp_ws, client, [BOARD])  # both vanish, so both postings close
+        state["ids"] = [1, 2]
+        back = run_source(tmp_ws, client, [BOARD])
+    assert sorted(back.changed_keys) == [mine, gone]
+    log = StatusLog(tmp_ws)
+    assert log.current(mine) == AppStatus.closed and log.history(mine)[-1].source == "manual"
+    assert log.current(gone) == AppStatus.discovered
+    assert log.history(gone)[-1].note == "back on the board"
 
 
 def test_failed_board_never_closes_jobs(

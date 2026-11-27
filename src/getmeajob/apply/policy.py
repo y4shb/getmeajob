@@ -1,12 +1,6 @@
 """Which jobs a run may touch: duplicates, exclusions, per-company caps, submit opt-in.
 
-Everything here reads files only (preferences, ledger, status log, plans), so it is
-tested without a browser. `preferences.yaml` holds:
-
-    apply:
-      submit_boards: []      # boards where --mode submit may click Submit, e.g. [greenhouse]
-      per_company_cap: 2     # applications per company in 30 days (0 turns the cap off)
-      exclude: []            # company slugs or parts of company names never to apply to
+Reads files only (preferences, ledger, status log, plans), so it is tested without a browser.
 """
 
 from __future__ import annotations
@@ -19,6 +13,7 @@ from getmeajob.errors import ConfigError, GetmeajobError
 from getmeajob.files import parse_ts
 from getmeajob.models import (
     FORWARD_ORDER,
+    SIDE_STATES,
     ApplyMode,
     ApplyStatus,
     AppStatus,
@@ -88,7 +83,8 @@ def load_apply_prefs(ws: Workspace) -> ApplyPrefs:
             for b in _strings(get_path(data, "apply.submit_boards"), "apply.submit_boards")
         ],
         per_company_cap=cap,
-        exclude=_strings(get_path(data, "apply.exclude"), "apply.exclude"),
+        exclude=_strings(get_path(data, "apply.exclude"), "apply.exclude")
+        + _strings(data.get("exclude_companies"), "exclude_companies"),
     )
 
 
@@ -179,7 +175,7 @@ def not_ready_reason(plan: Plan, mode: ApplyMode) -> str | None:
     if mode == ApplyMode.submit and any(a.needs_review for a in plan.answers):
         return (
             "has drafted answers you have not reviewed; run: getmeajob plan review, then "
-            f"getmeajob plan approve {plan.job_key}"
+            f"getmeajob plan approve {plan.job_key} (or --all)"
         )
     return None
 
@@ -204,24 +200,46 @@ def require_opt_in(plans: Sequence[Plan], prefs: ApplyPrefs) -> None:
     )
 
 
+def ruled_out(job: Job | None, current: AppStatus | None) -> str | None:
+    """Why a job you ruled out (or the board closed) must not be opened, or None."""
+    if current is not None and current in SIDE_STATES:
+        return f"tracked as {current.value} (from your tracker)"
+    if job is not None and job.status == "closed":
+        return "the job is closed on the board"
+    return None
+
+
 def skip_reason(
     plan: Plan,
     mode: ApplyMode,
     prefs: ApplyPrefs,
     history: list[LedgerEntry],
     tracker: StatusLog,
+    job: Job | None,
+    stale: bool,
 ) -> tuple[ApplyStatus, str] | None:
-    """(skip status, why) for a job this run must not open, else None. In order: excluded,
-    duplicate or waiting, plan not ready, board not opted in (submit), cap (not dry)."""
+    """(skip status, why) for a job this run must not open, else None. In order: excluded
+    or ruled out, duplicate or waiting, plan not ready or out of date, board not opted in
+    (submit), cap (not dry)."""
     entry = excluded_by(plan, prefs.exclude)
     if entry:
-        return ApplyStatus.skipped_excluded, f"matches '{entry}' in apply.exclude"
-    why = duplicate_reason(plan, mode, history, tracker.current(plan.job_key))
+        where = "apply.exclude or exclude_companies"
+        return ApplyStatus.skipped_excluded, f"matches '{entry}' in {where}"
+    current = tracker.current(plan.job_key)
+    why = ruled_out(job, current)
+    if why:
+        return ApplyStatus.skipped_excluded, why
+    why = duplicate_reason(plan, mode, history, current)
     if why:
         return ApplyStatus.skipped_duplicate, why
     why = not_ready_reason(plan, mode)
     if why:
         return ApplyStatus.skipped_not_ready, why
+    if stale:
+        return ApplyStatus.skipped_not_ready, (
+            "the plan is out of date (your profile, answers, rules or the job changed); "
+            f"run: getmeajob plan {plan.job_key}"
+        )
     if mode == ApplyMode.submit and not submit_allowed(plan, prefs):
         return ApplyStatus.skipped_not_ready, f"{plan.ats} is not in apply.submit_boards"
     if mode != ApplyMode.dry:

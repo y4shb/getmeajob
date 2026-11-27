@@ -23,6 +23,7 @@ ASHBY = "ashby:samplesystems:5a1e0000-0000-4000-8000-000000000001"
         ["plan", "review"],
         ["plan", "draft"],
         ["plan", "approve", GH],
+        ["plan", "approve", "--all"],
     ],
 )
 def test_missing_workspace_friendly(
@@ -53,13 +54,14 @@ def test_quickstart_flow(
     assert main([*home, "plan", "unknowns"]) == 0
     text = capsys.readouterr().out
     assert "Why do you want to join Example Corp?" in text and len(text.splitlines()) < 40
+    assert "require sponsorship" in text  # a remote job names no country: not guessed
 
-    stub = tmp_path / "todo.yaml"
+    stub = tmp_path / "answers-todo.yaml"
     assert main([*home, "-q", "plan", "unknowns", "--stub", str(stub)]) == 0
     filled = stub.read_text(encoding="utf-8").replace('Corp?": ""', 'Corp?": "Synthetic answer."')
-    stub.write_text(filled, encoding="utf-8")
+    stub.write_text(filled.replace('status?": ""', 'status?": "No"'), encoding="utf-8")
     saved = _json(capsys, [*home, "--json", "plan", "answer", str(stub)])
-    assert isinstance(saved, dict) and saved["saved"] == 1
+    assert isinstance(saved, dict) and saved["saved"] == 2
 
     out = _json(capsys, [*home, "--json", "plan", GH, ASHBY])
     assert isinstance(out, dict)
@@ -92,5 +94,6 @@ def test_usage_errors_are_friendly(
     assert main([*home, "plan", "show"]) == 2
     assert main([*home, "plan", "show", GH]) == 2  # no plan yet
     assert main([*home, "plan", GH, "--stub", "x.yaml"]) == 2
+    assert main([*home, "plan", "review", "--all"]) == 2
     err = capsys.readouterr().err
-    assert err.count("error:") == 3 and "Traceback" not in err
+    assert err.count("error:") == 4 and "Traceback" not in err

@@ -125,7 +125,8 @@ def test_work_authorization_and_sponsorship(ask: Ask, make_job: Callable[..., Jo
     remote = make_job("greenhouse:examplecorp:1001", "Example Corp", "X", "Remote - Worldwide")
     us_job = make_job("greenhouse:examplecorp:1003", "Example Corp", "X", "Remote - US")
     label = "Will you now or in the future require sponsorship for employment visa status?"
-    assert ask(label, SEL, YN, job=remote).value == "No"
+    assert ask(label, SEL, YN, job=remote).source == "unknown"  # never your home country
+    assert ask("Are you authorized to work?", SEL, YN, job=remote).source == "unknown"
     assert ask(label, SEL, YN, job=us_job).value == "Yes"
     assert ask(label, SEL, YN).source == "unknown"  # no country anywhere
     # "join us" is not the United States

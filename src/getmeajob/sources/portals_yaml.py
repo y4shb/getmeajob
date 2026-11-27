@@ -3,22 +3,13 @@
 Entries come from `tracked_companies` and `job_boards`. For each one the ATS is taken
 from `provider` (when it names a source getmeajob has), else from the `api` URL, else
 from the `careers_url`. Anything else is reported as unsupported, with a reason.
-`enabled: false` entries are imported as disabled boards.
-
-Filter rules (`title_matches`, `location_allowed`):
-- a term matches as a case-insensitive substring; 2 or 3 letter words match whole words
-- `word:term` matches whole words only, `stem:term` must start a word
-- in the include list, `a + b` means all of the terms, in any order
-- a title passes when no exclude term matches and the include list is empty or any
-  include term matches
-- a location passes when it is empty; else `block_hard` rejects, `always_allow` passes,
-  `block` rejects, and an empty `allow` passes, otherwise it must match `allow`
+`enabled: false` entries are imported as disabled boards. The title and location
+filters are read so `import-portals` can print them; they are not applied.
 """
 
 from __future__ import annotations
 
-import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -49,59 +40,6 @@ class PortalsImport:
 def _strings(value: Any) -> list[str]:
     items = value if isinstance(value, list) else [value] if isinstance(value, str) else []
     return [s for s in (clean_text(as_str(i)) for i in items) if s]
-
-
-# ---------------------------------------------------------------- matching
-
-
-def _pattern(term: str) -> re.Pattern[str] | None:
-    text = term.strip()
-    lowered = text.casefold()
-    if lowered.startswith("word:"):
-        body = text[5:].strip()
-        return re.compile(rf"(?<!\w){re.escape(body)}(?!\w)", re.IGNORECASE) if body else None
-    if lowered.startswith("stem:"):
-        body = text[5:].strip()
-        return re.compile(rf"(?<!\w){re.escape(body)}", re.IGNORECASE) if body else None
-    if not text:
-        return None
-    if 2 <= len(text) <= 3 and text.isalpha():
-        return re.compile(rf"(?<!\w){re.escape(text)}(?!\w)", re.IGNORECASE)
-    return re.compile(re.escape(text), re.IGNORECASE)
-
-
-def term_matches(text: str, term: str) -> bool:
-    pattern = _pattern(term)
-    return pattern is not None and pattern.search(text) is not None
-
-
-def _all_of(text: str, term: str) -> bool:
-    parts = [p for p in term.split(" + ") if p.strip()]
-    return bool(parts) and all(term_matches(text, p) for p in parts)
-
-
-def title_matches(title: str, include: Sequence[str], exclude: Sequence[str]) -> bool:
-    """Whether a job title passes the include and exclude lists (rules above)."""
-    if any(term_matches(title, term) for term in exclude):
-        return False
-    return not include or any(_all_of(title, term) for term in include)
-
-
-def location_allowed(location: str, rules: Mapping[str, Sequence[str]]) -> bool:
-    """Whether a location passes `block_hard > always_allow > block > allow`."""
-    if not location.strip():
-        return True
-
-    def hit(key: str) -> bool:
-        return any(term_matches(location, term) for term in rules.get(key, ()))
-
-    if hit("block_hard"):
-        return False
-    if hit("always_allow"):
-        return True
-    if hit("block"):
-        return False
-    return not rules.get("allow") or hit("allow")
 
 
 # ----------------------------------------------------------------- entries

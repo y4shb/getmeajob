@@ -11,6 +11,7 @@ from typing import Any
 
 from getmeajob.files import now_iso, read_json, read_jsonl
 from getmeajob.models import (
+    FORWARD_ORDER,
     AppStatus,
     Job,
     LedgerEntry,
@@ -176,3 +177,17 @@ def load_snapshot(ws: Workspace) -> Snapshot:
         notes=NotesLog(ws).current(),
         last_run=latest_run(ws),
     )
+
+
+def funnel(ws: Workspace) -> dict[str, Any]:
+    """Jobs per status now, and per forward step how many got at least that far."""
+    snap = load_snapshot(ws)
+    now = snap.counts()
+    reached = {s.value: 0 for s in FORWARD_ORDER}
+    for key in snap.jobs:
+        events = snap.history.get(key, [])
+        steps = [FORWARD_ORDER.index(e.status) for e in events if e.status in FORWARD_ORDER]
+        top = max(steps, default=0)
+        for status in FORWARD_ORDER[: top + 1]:
+            reached[status.value] += 1
+    return {"total": len(snap.jobs), "now": now, "reached": reached}
