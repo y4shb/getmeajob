@@ -53,7 +53,7 @@ def _required(box: Locator) -> bool:
 
 
 def _exists(page: Page, field_id: str) -> bool:
-    return by_id(page, field_id).count() > 0
+    return bool(by_id(page, field_id).count() > 0)
 
 
 def _ensure_row(page: Page, section: str, i: int) -> bool:
