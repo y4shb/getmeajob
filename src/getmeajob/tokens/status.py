@@ -45,7 +45,11 @@ def _tracker_is_current(ws: Workspace) -> bool:
 
 
 def _stale_plans(snap: Snapshot) -> bool:
-    ready = [(k, p) for k, p in snap.plans.items() if p.status == PlanStatus.ready]
+    ready = [
+        (k, p)
+        for k, p in snap.plans.items()
+        if p.status == PlanStatus.ready and snap.status_of(k) == AppStatus.ready
+    ]
     if not ready:
         return False
     try:

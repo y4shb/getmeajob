@@ -67,14 +67,24 @@ _LABEL_MARKERS = re.compile(r"\((?:required|optional)\)")
 # "Do not use automated tools" notices aimed at the applicant. A sentence counts when it
 # names a tool, a prohibition and the application itself, and is not the employer
 # describing its own tools ("We never use automated tools to screen candidates").
+_TOOLS = (
+    r"(ai|artificial intelligence|chatgpt|gpt|llms?|(large )?language models?|chat ?bots?|"
+    r"bots?|automated|automation|auto-?(fill|apply)\w*|scripts?|scripted)"
+)
+# The tool must be what the sentence forbids: used, written by, or the subject itself.
 _TOOL = re.compile(
-    r"\b(ai|artificial intelligence|chatgpt|gpt|llms?|(large )?language models?|chat ?bots?|"
-    r"bots?|automated|automation|auto-?fill\w*|scripts?|scripted)\b",
+    rf"\b(use|using|used)\b(\W+\w+){{0,5}}?\W+{_TOOLS}\b|"
+    rf"\b(by|with|from|via|through) (an? |the )?{_TOOLS}\b|"
+    rf"\bwith the (help|use|assistance) of (an? )?{_TOOLS}\b|"
+    rf"^\W*(the |any |all )?(use of )?{_TOOLS}\b|"
+    rf"\b{_TOOLS}[- ](generated|written|assisted|completed|powered|created)\b|"
+    rf"\b{_TOOLS} (applications?|submissions?|responses?|answers?)\b",
     re.I,
 )
 _NO = re.compile(
     r"\b(do not|don['’]t|must not|may not|should not|cannot|can['’]t|never|refrain from|"
-    r"prohibited|forbidden|banned|not (be )?(accepted|allowed|permitted|considered)|"
+    r"prohibited|forbidden|banned|not (be )?(accepted|allowed|permitted|considered)|not by|"
+    r"without the (use|help) of|(result|results|lead|leads) (in|to) (disqualification|rejection)|"
     r"(will be|are|is) (rejected|disqualified|removed|discarded|ignored))\b",
     re.I,
 )
@@ -82,7 +92,7 @@ _FOR = re.compile(
     r"\b(apply|applying|applications?|applicants?|this (form|role|job|position|posting)|"
     r"your (answers?|responses?|cover letter|application|resume|cv)|"
     r"answer(ing)? (these|the|any|our) questions|(these|screening) questions|"
-    r"fill(ing)? (out|in) (this|the) form)\b",
+    r"fill(ing)? (out|in) (this|the) form|(responses|answers) (generated|written|created))\b",
     re.I,
 )
 _SELF = re.compile(
@@ -93,6 +103,7 @@ _SELF = re.compile(
 )
 _DIRECT = re.compile(
     r"\bif you are an? (ai|llm|(ai )?language model|bot|automated (agent|tool|system))\b|"
+    r"\b(note|message|instructions?) (to|for) (ai|llms?|bots?|language models?|automated)\b|"
     r"\bmust be (completed|filled( out)?|submitted|written|answered) by "
     r"(a human|a person|you personally|yourself|hand)\b",
     re.I,
