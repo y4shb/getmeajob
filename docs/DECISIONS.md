@@ -27,7 +27,7 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 | 13 | Commits use the owner's own identity, set in the repo-local git config, and the remote `origin` is mapped to the owner's GitHub repository. Agents never push. Public files never contain the owner's name, email or handle. The scanner allows the repo's configured identity in commit metadata only, and CI runs it with `--skip-identity`. | The owner changed the earlier instruction on 2026-11-27 and asked for the remote to be mapped. | The neutral `getmeajob maintainers` identity first planned. | owner | decided |
 | 14 | Commit messages carry no co-author or tool trailers. | The owner's standing preference. | none considered | owner | decided |
 | 25 | Claude Code files ship as a plugin named getmeajob, with commands `/getmeajob:<command>`. Flat copies named `getmeajob-<command>.md` serve projects that do not use plugins. | The owner's naming rule and the plugin namespacing convention. | none considered | owner, orchestrator | decided |
-| 34 | The MIT copyright line is "getmeajob contributors". | Neutral until the owner picks a name. | none considered | orchestrator | open (owner may change) |
+| 34 | The license is Apache-2.0 with a NOTICE file that credits the original author. | The owner wants people to use and change the code while crediting them; the NOTICE file is the standard Apache way to require that credit. | MIT (credit only through the copyright line in copies of the code); a custom license (not a recognised open-source license) | owner | decided |
 | 35 | Final repository name. | not recorded | none considered | owner | open |
 
 ## Data, network and tracking

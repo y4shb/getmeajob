@@ -3,7 +3,7 @@
 A job hunt as a pipeline of plain scripts that you or your AI agent can drive: find, rank, plan, apply, track.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Tests: pytest](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)](docs/TESTS.md)
 [![Browser: Playwright](https://img.shields.io/badge/browser-Playwright-2EAD33)](docs/SPEC.md#applying)
 [![MCP server](https://img.shields.io/badge/MCP-server-6E56CF)](#use-it-with-your-ai-agent)
@@ -346,4 +346,4 @@ Use only synthetic data in examples and tests: `example.com` addresses, `+1 555 
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Apache-2.0. You may use, change and share this code, including in commercial work. If you share it or build on it, keep the [NOTICE](NOTICE) file, which credits the original author. See [LICENSE](LICENSE).

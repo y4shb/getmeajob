@@ -1,0 +1,3 @@
+# Allowed scanner findings (regexes matched against "rule:location").
+# The author's name is meant to appear in the license credit files only.
+^denylist:(NOTICE|pyproject\.toml):
