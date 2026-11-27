@@ -1,0 +1,4 @@
+{
+  "https://job-boards.greenhouse.io/embed/job_app?for=examplecorp&token=1001": "mock_forms/greenhouse.html",
+  "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000001/application": "mock_forms/ashby.html"
+}

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Engineer at Sample Systems (mock application)</title>
+<!--
+  A made-up Ashby-style application form for the getmeajob demo and tests.
+  Written from scratch. It copies only structural conventions (field boxes with a class
+  containing _fieldEntry, label[for], Yes/No buttons, radio lists, a location combobox).
+  No network, no external files. Variants: ?captcha=1 ?noauto=1 ?spam=1 ?code=1
+-->
+<style>
+  :root { --ink: #222833; --muted: #646d7a; --line: #d8dde5; --bad: #b3261e; }
+  body { font: 15px/1.45 system-ui, sans-serif; color: var(--ink); background: #fafbfc; margin: 0; }
+  main { max-width: 680px; margin: 0 auto; padding: 24px 16px 260px; }
+  .ashby-application-form-field-entry { background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px; margin-bottom: 12px; }
+  label, .heading { display: block; font-weight: 600; margin-bottom: 6px; }
+  ._required_ab12c_92::after { content: " *"; color: var(--bad); }
+  input[type=text], input[type=email], input[type=tel], input[type=number], textarea { width: 100%;
+    box-sizing: border-box; padding: 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+  ._yesno_ab12c_1 button { min-width: 72px; margin-right: 8px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--ink); background: #fff; cursor: pointer; }
+  button[aria-pressed=true] { background: var(--ink); color: #fff; }
+  ._option_ab12c_5 { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
+  ._option_ab12c_5 label { font-weight: 400; margin: 0; }
+  [role=listbox] { border: 1px solid var(--line); border-radius: 6px; background: #fff; margin-top: 2px; }
+  [role=option] { padding: 6px 10px; cursor: pointer; }
+  ._error_ab12c_7 { color: var(--bad); font-size: 13px; margin: 6px 0 0; }
+  .upload-name { color: var(--muted); margin-left: 8px; }
+  .notice { border: 1px solid var(--line); background: #fff7e6; padding: 10px; border-radius: 6px; }
+  .cookie-banner { position: fixed; left: 0; right: 0; bottom: 0; height: 170px; background: #1f2430; color: #fff;
+    padding: 20px; box-sizing: border-box; z-index: 50; }
+  .cookie-banner button { margin-right: 8px; color: var(--ink); }
+  .ashby-application-form-submit-button { background: var(--ink); color: #fff; width: 100%; padding: 12px; }
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Platform Engineer</h1>
+  <p class="heading">Sample Systems. Springfield, Ontario, Canada (Hybrid)</p>
+  <p>This is a mock form for the getmeajob demo; nothing is sent anywhere.</p>
+  <div id="variant-slot"></div>
+  <form id="application-form" class="ashby-application-form-container" novalidate>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="_systemfield_name">Name</label>
+      <input id="_systemfield_name" name="_systemfield_name" type="text" required placeholder="Type here..."></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="_systemfield_email">Email</label>
+      <input id="_systemfield_email" name="_systemfield_email" type="email" required placeholder="hello@example.com"></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="_systemfield_resume">Resume</label>
+      <input id="_systemfield_resume" name="_systemfield_resume" type="file" required hidden accept=".pdf,.doc,.docx">
+      <button type="button" id="upload-button">Upload File</button><span class="upload-name" id="upload-name"></span></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="c0ffee00-0000-4000-8000-0000000000a1">Phone</label>
+      <input id="c0ffee00-0000-4000-8000-0000000000a1" name="c0ffee00-0000-4000-8000-0000000000a1" type="tel" required></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29" data-yesno="c0ffee00-0000-4000-8000-0000000000a2">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="c0ffee00-0000-4000-8000-0000000000a2">Will you require visa sponsorship to work in Canada?</label>
+      <div class="_yesno_ab12c_1"><button type="button" aria-pressed="false">Yes</button><button type="button" aria-pressed="false">No</button></div>
+      <input type="checkbox" id="c0ffee00-0000-4000-8000-0000000000a2" name="c0ffee00-0000-4000-8000-0000000000a2" hidden></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="c0ffee00-0000-4000-8000-0000000000a3">Where are you currently located?</label>
+      <input id="c0ffee00-0000-4000-8000-0000000000a3" name="c0ffee00-0000-4000-8000-0000000000a3" type="text" role="combobox" required
+        autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="c0ffee00-0000-4000-8000-0000000000a3-listbox" placeholder="Start typing...">
+      <div role="listbox" id="c0ffee00-0000-4000-8000-0000000000a3-listbox" hidden></div></div>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53 _required_ab12c_92" for="c0ffee00-0000-4000-8000-0000000000a4">How many years of professional experience do you have?</label>
+      <input id="c0ffee00-0000-4000-8000-0000000000a4" name="c0ffee00-0000-4000-8000-0000000000a4" type="number" min="0" step="1" required></div>
+    <fieldset class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53" for="c0ffee00-0000-4000-8000-0000000000a5">Preferred work arrangement</label>
+      <div class="_option_ab12c_5"><input type="radio" id="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-0" name="c0ffee00-0000-4000-8000-0000000000a5" value="Remote">
+        <label for="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-0">Remote</label></div>
+      <div class="_option_ab12c_5"><input type="radio" id="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-1" name="c0ffee00-0000-4000-8000-0000000000a5" value="Hybrid">
+        <label for="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-1">Hybrid</label></div>
+      <div class="_option_ab12c_5"><input type="radio" id="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-2" name="c0ffee00-0000-4000-8000-0000000000a5" value="Onsite">
+        <label for="c0ffee00-0000-4000-8000-0000000000a5-labeled-radio-2">Onsite</label></div>
+    </fieldset>
+    <div class="ashby-application-form-field-entry _fieldEntry_ab12c_29">
+      <label class="_heading_ab12c_53" for="c0ffee00-0000-4000-8000-0000000000a6">Anything else you would like us to know?</label>
+      <textarea id="c0ffee00-0000-4000-8000-0000000000a6" name="c0ffee00-0000-4000-8000-0000000000a6" rows="4"></textarea></div>
+    <button type="submit" class="ashby-application-form-submit-button">Submit Application</button>
+  </form>
+</main>
+<div class="cookie-banner" role="dialog" aria-label="Cookie consent" id="cookie-banner">
+  <p>We use cookies to run this site and, if you agree, to measure how it is used.</p>
+  <button type="button" data-choice="all">Accept all</button>
+  <button type="button" data-choice="necessary">Necessary only</button>
+</div>
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(location.search);
+  window.__submitCount = 0;
+  window.__cookieChoice = null;
+  const LOCATIONS = ['Springfield, Illinois, United States', 'Springfield, Ontario, Canada',
+    'Springfield, Missouri, United States', 'Toronto, Ontario, Canada', 'Ottawa, Ontario, Canada'];
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs, text) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const slot = $('variant-slot');
+  const form = $('application-form');
+
+  document.querySelectorAll('#cookie-banner button').forEach((b) => b.addEventListener('click', () => {
+    window.__cookieChoice = b.dataset.choice;
+    $('cookie-banner').remove();
+  }));
+
+  const resume = $('_systemfield_resume');
+  $('upload-button').addEventListener('click', () => resume.click());
+  resume.addEventListener('change', () => {
+    $('upload-name').textContent = 'Reading your resume...';
+    setTimeout(() => { $('upload-name').textContent = resume.files.length ? resume.files[0].name : ''; }, 300);
+  });
+
+  document.querySelectorAll('[data-yesno]').forEach((box) => {
+    const hidden = box.querySelector('input[type=checkbox]');
+    box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+      hidden.checked = b.textContent.trim() === 'Yes';
+      box.dataset.answer = b.textContent.trim();
+      clearError(box);
+    }));
+  });
+
+  const loc = $('c0ffee00-0000-4000-8000-0000000000a3');
+  const list = $('c0ffee00-0000-4000-8000-0000000000a3-listbox');
+  let locTimer = null;
+  loc.addEventListener('input', () => {
+    loc.dataset.chosen = '';
+    clearTimeout(locTimer);
+    const q = loc.value.trim().toLowerCase();
+    if (q.length < 2) { list.hidden = true; return; }
+    locTimer = setTimeout(() => {
+      list.textContent = '';
+      LOCATIONS.filter((x) => x.toLowerCase().includes(q)).forEach((x) => {
+        const opt = el('div', { role: 'option' }, x);
+        opt.addEventListener('mousedown', (e) => e.preventDefault());
+        opt.addEventListener('click', () => {
+          loc.value = x; loc.dataset.chosen = x; list.hidden = true;
+          loc.setAttribute('aria-expanded', 'false'); clearError(loc.closest('._fieldEntry_ab12c_29'));
+        });
+        list.append(opt);
+      });
+      list.hidden = !list.children.length;
+      loc.setAttribute('aria-expanded', String(!list.hidden));
+    }, 250);
+  });
+  loc.addEventListener('keydown', (e) => { if (e.key === 'Escape') { list.hidden = true; loc.setAttribute('aria-expanded', 'false'); } });
+  loc.addEventListener('blur', () => setTimeout(() => {
+    list.hidden = true;
+    if (!loc.dataset.chosen) loc.value = '';
+  }, 150));
+
+  const years = $('c0ffee00-0000-4000-8000-0000000000a4');
+  years.addEventListener('input', () => {
+    if (years.validity.badInput || /[^0-9]/.test(years.value)) years.setAttribute('aria-invalid', 'true');
+    else years.removeAttribute('aria-invalid');
+  });
+
+  if (params.get('captcha') === '1') {
+    slot.append(el('iframe', { title: 'recaptcha challenge expires in two minutes',
+      src: 'recaptcha/api2/bframe.html?hl=en&k=demo', width: '400', height: '300' }));
+  }
+  if (params.get('noauto') === '1') {
+    slot.append(el('p', { class: 'notice' }, 'Do not use AI agents or automated tools to fill in this form. We read every application ourselves.'));
+  }
+
+  function clearError(box) {
+    if (!box) return;
+    box.querySelectorAll('._error_ab12c_7').forEach((n) => n.remove());
+    box.querySelectorAll('[aria-invalid]').forEach((n) => n.removeAttribute('aria-invalid'));
+  }
+  document.querySelectorAll('input, textarea').forEach((n) => n.addEventListener('input', () => {
+    if (n !== years) clearError(n.closest('._fieldEntry_ab12c_29'));
+  }));
+  function fieldError(box, text) {
+    if (box.querySelector('._error_ab12c_7')) return;
+    const input = box.querySelector('input, textarea');
+    if (input) input.setAttribute('aria-invalid', 'true');
+    box.append(el('p', { class: '_error_ab12c_7', role: 'alert' }, text));
+  }
+  function done() {
+    $('app').innerHTML = '<h1>Application submitted</h1><p>Sample Systems will be in touch.</p>';
+  }
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.__submitCount += 1;
+    let bad = 0;
+    form.querySelectorAll('._fieldEntry_ab12c_29').forEach((box) => {
+      const heading = box.querySelector('label');
+      if (!heading.classList.contains('_required_ab12c_92')) return;
+      let ok = true;
+      if (box.dataset.yesno) ok = !!box.dataset.answer;
+      else if (box.contains(loc)) ok = !!loc.dataset.chosen;
+      else if (box.contains(resume)) ok = resume.files.length > 0;
+      else if (box.contains(years)) ok = /^[0-9]+$/.test(years.value);
+      else ok = !!box.querySelector('input, textarea').value.trim();
+      if (!ok) { bad += 1; fieldError(box, 'This field is required.'); }
+    });
+    if (bad) return;
+    if (params.get('spam') === '1') {
+      slot.append(el('p', { class: 'notice', role: 'alert' }, 'We could not submit your application. It was flagged as possible spam.'));
+      return;
+    }
+    if (params.get('code') === '1') {
+      form.hidden = true;
+      const input = el('input', { type: 'text', autocomplete: 'one-time-code', id: 'verification-code' });
+      const verify = el('button', { type: 'button' }, 'Verify');
+      verify.addEventListener('click', () => { if (input.value.trim() === 'ABCD1234') done(); });
+      slot.append(el('p', {}, 'Enter the verification code sent to your email'), input, verify);
+      return;
+    }
+    done();
+  });
+})();
+</script>
+</body>
+</html>

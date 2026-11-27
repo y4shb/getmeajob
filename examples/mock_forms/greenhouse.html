@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apply: Senior Backend Engineer at Example Corp (mock form)</title>
+<!--
+  A made-up Greenhouse-style application form for the getmeajob demo and tests.
+  Written from scratch. It copies only structural conventions (ids equal field names,
+  react-select-like widgets, checkbox ids name_optionId). No network, no external files.
+  Variants by query string: ?captcha=1 ?code=1 ?account=1 ?noauto=1
+-->
+<style>
+  :root { --ink: #1d2733; --muted: #5b6776; --line: #d5dbe3; --bad: #b3261e; --bg: #fff; }
+  body { font: 15px/1.45 system-ui, sans-serif; color: var(--ink); background: var(--bg); margin: 0; }
+  [hidden] { display: none !important; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+  .field, .select__container, fieldset { margin: 0 0 16px; }
+  label, legend { display: block; font-weight: 600; margin-bottom: 4px; }
+  .required { color: var(--bad); margin-left: 2px; }
+  input[type=text], input[type=email], input[type=tel], textarea { width: 100%; box-sizing: border-box;
+    padding: 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+  [aria-invalid=true] { border-color: var(--bad) !important; }
+  .helper-text--error { color: var(--bad); margin: 4px 0 0; font-size: 13px; }
+  .select-shell { position: relative; }
+  .select__control { display: flex; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+    cursor: text; min-height: 22px; }
+  .select__value-container { flex: 1; position: relative; display: flex; align-items: center; }
+  .select__placeholder, .select__single-value { position: absolute; pointer-events: none; }
+  .select__placeholder { color: var(--muted); }
+  .select__input { border: 0; outline: 0; font: inherit; width: 100%; background: transparent; }
+  .select__menu { position: absolute; z-index: 5; left: 0; right: 0; background: #fff;
+    border: 1px solid var(--line); border-radius: 6px; margin-top: 2px; max-height: 220px; overflow: auto; }
+  .select__option { padding: 6px 10px; cursor: pointer; }
+  .select__option--is-focused { background: #eef3fb; }
+  .select__menu-notice { padding: 6px 10px; color: var(--muted); }
+  .phone-row { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+  .dial { color: var(--muted); font-size: 13px; }
+  .row { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .note { color: var(--muted); font-size: 13px; }
+  .notice { border: 1px solid var(--line); background: #fff7e6; padding: 10px; border-radius: 6px; }
+  button { font: inherit; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--ink); background: #fff; cursor: pointer; }
+  button[type=submit] { background: var(--ink); color: #fff; }
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Senior Backend Engineer</h1>
+  <p class="note">Example Corp. Remote - Worldwide. This is a mock form for the getmeajob demo; nothing is sent anywhere.</p>
+  <div id="variant-slot"></div>
+  <form id="application-form" novalidate>
+    <h2>Apply for this job</h2>
+    <div class="field"><label for="first_name">First Name<span class="required">*</span></label>
+      <input id="first_name" name="first_name" type="text" aria-required="true" autocomplete="given-name"></div>
+    <div class="field"><label for="last_name">Last Name<span class="required">*</span></label>
+      <input id="last_name" name="last_name" type="text" aria-required="true" autocomplete="family-name"></div>
+    <div class="field"><label for="email">Email<span class="required">*</span></label>
+      <input id="email" name="email" type="email" aria-required="true" autocomplete="email"></div>
+    <div class="phone-row">
+      <div class="select__container" data-id="country" data-required="true" data-options='[["Australia +61","AU"],["Canada +1","CA"],["Germany +49","DE"],["India +91","IN"],["United Kingdom +44","GB"],["United States +1","US"]]'>
+        <label for="country">Country<span class="required">*</span></label></div>
+      <div class="field"><label for="phone">Phone<span class="required">*</span></label>
+        <input id="phone" name="phone" type="tel" aria-required="true" autocomplete="tel-national">
+        <span class="dial" id="dial-code">Choose a country first</span></div>
+    </div>
+    <div class="field"><label for="resume">Resume/CV<span class="required">*</span></label>
+      <input id="resume" name="resume" type="file" accept=".pdf,.doc,.docx,.txt" aria-required="true"></div>
+    <div class="field"><label for="cover_letter">Cover Letter</label>
+      <input id="cover_letter" name="cover_letter" type="file" accept=".pdf,.doc,.docx,.txt"></div>
+    <div class="field"><label for="question_2001">LinkedIn Profile</label>
+      <input id="question_2001" name="question_2001" type="text"></div>
+    <div class="select__container" data-id="question_2002" data-required="true" data-options='[["Yes","1"],["No","0"]]'>
+      <label for="question_2002">Are you legally authorized to work in Canada?<span class="required">*</span></label></div>
+    <div class="select__container" data-id="question_2003" data-required="true" data-options='[["Yes","2101"],["No","2102"]]'>
+      <label for="question_2003">Will you now or in the future require sponsorship for employment visa status?<span class="required">*</span></label></div>
+    <div class="select__container" data-id="question_2004" data-required="true" data-options='[["0-2","2201"],["3-5","2202"],["6-9","2203"],["10+","2204"]]'>
+      <label for="question_2004">How many years of professional software experience do you have?<span class="required">*</span></label></div>
+    <div class="field"><label for="question_2005">Why do you want to join Example Corp?<span class="required">*</span></label>
+      <textarea id="question_2005" name="question_2005" rows="4" aria-required="true"></textarea></div>
+    <fieldset class="checkbox__wrapper"><legend>Which of these have you used in production?</legend>
+      <div><input type="checkbox" id="question_2006[]_11" name="question_2006[]" value="11"><label for="question_2006[]_11">Python</label></div>
+      <div><input type="checkbox" id="question_2006[]_12" name="question_2006[]" value="12"><label for="question_2006[]_12">Go</label></div>
+      <div><input type="checkbox" id="question_2006[]_13" name="question_2006[]" value="13"><label for="question_2006[]_13">Kubernetes</label></div>
+      <div><input type="checkbox" id="question_2006[]_14" name="question_2006[]" value="14"><label for="question_2006[]_14">Rust</label></div>
+    </fieldset>
+    <div class="select__container" data-id="candidate-location" data-required="true" data-async="locations">
+      <label for="candidate-location">Location (City)<span class="required">*</span></label></div>
+
+    <section id="employment-section"><h3>Employment</h3><div class="rows"></div>
+      <button type="button" class="add-another-button">Add another</button></section>
+    <section id="education-section"><h3>Education</h3><div class="rows"></div>
+      <button type="button" class="add-another-button">Add another</button></section>
+
+    <section id="demographics"><h3>Voluntary Self-Identification</h3>
+      <div class="select__container" data-id="demographic_4001" data-options='[["Man","4101"],["Woman","4102"],["Non-binary","4103"],["Decline to self-identify","4104"]]'>
+        <label for="demographic_4001">Gender</label></div>
+      <div class="select__container" data-id="demographic_4002" data-options='[["Asian","4201"],["Black or African American","4202"],["Hispanic or Latino","4203"],["White","4204"],["Two or more races","4205"],["Decline to self-identify","4206"]]'>
+        <label for="demographic_4002">Race / Ethnicity</label></div>
+      <div class="select__container" data-id="demographic_4003" data-options='[["I am a protected veteran","4301"],["I am not a protected veteran","4302"],["Decline to self-identify","4303"]]'>
+        <label for="demographic_4003">Veteran status</label></div>
+    </section>
+    <p class="note">This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.</p>
+    <button type="submit" id="submit-app">Submit application</button>
+  </form>
+</main>
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(location.search);
+  window.__submitCount = 0;
+  const LOCATIONS = ['Springfield, Illinois, United States', 'Springfield, Ontario, Canada',
+    'Springfield, Missouri, United States', 'Springfield, Massachusetts, United States',
+    'Toronto, Ontario, Canada', 'Ottawa, Ontario, Canada', 'London, England, United Kingdom'];
+  const SCHOOLS = ['Example State University', 'Example Technical Institute', 'Sample University',
+    'Placeholder College', 'Demo Community College', 'Other'];
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'].map((m, i) => [m, String(i + 1)]);
+  const DEGREES = [["High School", "1"], ["Associate's Degree", "2"], ["Bachelor's Degree", "3"],
+    ["Master's Degree", "4"], ["Doctor of Philosophy (Ph.D.)", "5"], ["Other", "6"]];
+  const DISCIPLINES = [["Computer Science", "1"], ["Computer Engineering", "2"],
+    ["Electrical Engineering", "3"], ["Mathematics", "4"], ["Business", "5"], ["Other", "6"]];
+  const LOADERS = { locations: LOCATIONS, schools: SCHOOLS };
+  const selects = {};
+
+  function el(tag, attrs, text) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function clearError(id) {
+    const input = document.getElementById(id);
+    if (input) input.removeAttribute('aria-invalid');
+    const err = document.getElementById(id + '-error');
+    if (err) err.remove();
+  }
+
+  function makeSelect(box) {
+    const id = box.dataset.id;
+    const asyncName = box.dataset.async || '';
+    const delay = asyncName === 'schools' ? 300 : asyncName ? 250 : 120;
+    const fixed = box.dataset.options ? JSON.parse(box.dataset.options).map(([label, value]) => ({ label, value })) : [];
+    const shell = el('div', { class: 'select-shell' });
+    const control = el('div', { class: 'select__control' });
+    const values = el('div', { class: 'select__value-container' });
+    const placeholder = el('div', { class: 'select__placeholder' }, 'Select...');
+    const single = el('div', { class: 'select__single-value' });
+    single.hidden = true;
+    const input = el('input', { class: 'select__input', id, type: 'text', role: 'combobox', autocomplete: 'off',
+      'aria-expanded': 'false', 'aria-autocomplete': 'list', 'aria-required': box.dataset.required === 'true' ? 'true' : 'false' });
+    const hidden = el('input', { type: 'hidden', name: id, value: '' });
+    values.append(placeholder, single, input);
+    control.append(values);
+    shell.append(control, hidden);
+    box.append(shell);
+    let menu = null, timer = null, shown = [];
+
+    function close() {
+      clearTimeout(timer);
+      if (menu) { menu.remove(); menu = null; }
+      input.setAttribute('aria-expanded', 'false');
+    }
+    function render(items, notice) {
+      if (!menu) {
+        menu = el('div', { class: 'select__menu', role: 'listbox' });
+        menu.addEventListener('mousedown', (e) => e.preventDefault());
+        shell.append(menu);
+      }
+      menu.textContent = '';
+      const list = el('div', { class: 'select__menu-list' });
+      if (notice) list.append(el('div', { class: 'select__menu-notice' }, notice));
+      shown = items;
+      items.forEach((o, i) => {
+        const opt = el('div', { class: 'select__option' + (i === 0 ? ' select__option--is-focused' : ''), role: 'option' }, o.label);
+        opt.addEventListener('click', () => choose(o));
+        list.append(opt);
+      });
+      menu.append(list);
+      input.setAttribute('aria-expanded', 'true');
+      placeholder.hidden = !!input.value || !!hidden.value;
+    }
+    function search(q) {
+      clearTimeout(timer);
+      const t = q.trim().toLowerCase();
+      if (asyncName) {
+        if (t.length < 2) { render([], 'Type to search'); return; }
+        render([], 'Loading...');
+        timer = setTimeout(() => {
+          const res = LOADERS[asyncName].filter((x) => x.toLowerCase().includes(t)).map((x) => ({ label: x, value: x }));
+          render(res, res.length ? '' : 'No options');
+        }, delay);
+        return;
+      }
+      const show = () => {
+        const res = fixed.filter((o) => o.label.toLowerCase().includes(t));
+        render(res, res.length ? '' : 'No options');
+      };
+      if (!t) show(); else timer = setTimeout(show, delay);
+    }
+    function choose(o) {
+      single.textContent = o.label;
+      single.hidden = false;
+      placeholder.hidden = true;
+      hidden.value = o.value;
+      box.dataset.value = o.value;
+      input.value = '';
+      close();
+      clearError(id);
+      box.dispatchEvent(new CustomEvent('select:change', { detail: o, bubbles: true }));
+    }
+    control.addEventListener('mousedown', (e) => {
+      if (e.target !== input) e.preventDefault();
+      input.focus();
+      if (!menu) search(input.value);
+    });
+    input.addEventListener('input', () => { single.hidden = !!input.value || !hidden.value; search(input.value); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { input.value = ''; single.hidden = !hidden.value; close(); }
+      if (e.key === 'Enter') { e.preventDefault(); if (shown[0]) choose(shown[0]); }
+    });
+    input.addEventListener('blur', () => setTimeout(() => { input.value = ''; single.hidden = !hidden.value; close(); }, 100));
+    selects[id] = { box, required: box.dataset.required === 'true', value: () => hidden.value };
+    return selects[id];
+  }
+
+  function selectBox(id, label, options, extra) {
+    const box = el('div', Object.assign({ class: 'select__container', 'data-id': id }, extra || {}));
+    if (options) box.dataset.options = JSON.stringify(options);
+    const lab = el('label', { for: id }, label);
+    box.append(lab);
+    makeSelect(box);
+    return box;
+  }
+  function textField(id, label) {
+    const wrap = el('div', { class: 'field' });
+    wrap.append(el('label', { for: id }, label), el('input', { id, name: id, type: 'text' }));
+    return wrap;
+  }
+
+  const sections = {
+    employment(i) {
+      const row = el('div', { class: 'row', 'data-row': String(i) });
+      const start = el('div', { class: 'pair' });
+      start.append(selectBox(`start-date-month-${i}`, 'Start date month', MONTHS), textField(`start-date-year-${i}`, 'Start date year'));
+      const end = el('div', { class: 'pair end-dates' });
+      end.append(selectBox(`end-date-month-${i}`, 'End date month', MONTHS), textField(`end-date-year-${i}`, 'End date year'));
+      const current = el('div', { class: 'field' });
+      const box = el('input', { type: 'checkbox', id: `current-role-${i}`, name: `current-role-${i}` });
+      box.addEventListener('change', () => { end.hidden = box.checked; });
+      current.append(box, el('label', { for: `current-role-${i}` }, 'I currently work here'));
+      row.append(textField(`company-name-${i}`, 'Company name'), textField(`title-${i}`, 'Title'), start, current, end);
+      return row;
+    },
+    education(i) {
+      const row = el('div', { class: 'row', 'data-row': String(i) });
+      const years = el('div', { class: 'pair' });
+      years.append(textField(`start-year--${i}`, 'Start year'), textField(`end-year--${i}`, 'End year'));
+      row.append(selectBox(`school--${i}`, 'School', null, { 'data-async': 'schools' }),
+        selectBox(`degree--${i}`, 'Degree', DEGREES), selectBox(`discipline--${i}`, 'Discipline', DISCIPLINES), years);
+      return row;
+    },
+  };
+  for (const name of ['employment', 'education']) {
+    const section = document.getElementById(name + '-section');
+    const rows = section.querySelector('.rows');
+    rows.append(sections[name](0));
+    section.querySelector('.add-another-button').addEventListener('click', () => {
+      const n = rows.children.length;
+      setTimeout(() => rows.append(sections[name](n)), 200);
+    });
+  }
+  document.querySelectorAll('form .select__container[data-id]').forEach((box) => { if (!selects[box.dataset.id]) makeSelect(box); });
+
+  const phone = document.getElementById('phone');
+  selects.country.box.addEventListener('select:change', (e) => {
+    document.getElementById('dial-code').textContent = 'Dial code ' + e.detail.label.split(' ').pop();
+    phone.value = '';  // like real forms, changing the country resets the number
+  });
+  document.querySelectorAll('input:not(.select__input), textarea').forEach((node) => {
+    node.addEventListener('input', () => clearError(node.id));
+    node.addEventListener('change', () => clearError(node.id));
+  });
+
+  const slot = document.getElementById('variant-slot');
+  const form = document.getElementById('application-form');
+  if (params.get('captcha') === '1') {
+    slot.append(el('iframe', { title: 'recaptcha challenge expires in two minutes',
+      src: 'recaptcha/api2/bframe.html?hl=en&k=demo', width: '400', height: '300' }));
+  }
+  if (params.get('noauto') === '1') {
+    slot.append(el('p', { class: 'notice' }, 'Please do not use automated tools, bots or AI agents to complete this application. ' +
+      'Applications filled in by automated tools will be rejected.'));
+  }
+  if (params.get('account') === '1') {
+    form.hidden = true;
+    const wall = el('section', { id: 'account-wall' });
+    wall.append(el('h2', {}, 'Create an account to apply'), el('label', { for: 'acct-email' }, 'Email'),
+      el('input', { id: 'acct-email', type: 'email' }), el('label', { for: 'acct-password' }, 'Password'),
+      el('input', { id: 'acct-password', type: 'password' }), el('button', { type: 'button' }, 'Create account'));
+    slot.append(wall);
+  }
+
+  function showError(id, text) {
+    const input = document.getElementById(id);
+    if (!input || document.getElementById(id + '-error')) return;
+    input.setAttribute('aria-invalid', 'true');
+    const holder = input.closest('.select__container, .field') || input.parentElement;
+    holder.append(el('p', { class: 'helper-text helper-text--error', id: id + '-error' }, text));
+  }
+  function thanks() {
+    document.getElementById('app').innerHTML = '<div class="confirmation"><h1>Thank you for applying</h1>' +
+      '<p>Example Corp has received your application.</p></div>';
+  }
+  function codeStep() {
+    form.hidden = true;
+    const step = el('section', { id: 'security-code-step' });
+    const input = el('input', { id: 'security-input-0', type: 'text', autocomplete: 'one-time-code', maxlength: '8' });
+    const verify = el('button', { type: 'button', id: 'verify-code' }, 'Submit');
+    step.append(el('p', {}, 'Enter the 8-character security code sent to your email'), input, verify);
+    verify.addEventListener('click', () => {
+      if (input.value.trim() === 'ABCD1234') thanks();
+      else if (!document.getElementById('security-input-0-error')) showError('security-input-0', 'That code is not correct.');
+    });
+    slot.append(step);
+  }
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.__submitCount += 1;
+    const missing = [];
+    for (const id of ['first_name', 'last_name', 'email', 'phone', 'question_2005']) {
+      if (!document.getElementById(id).value.trim()) missing.push(id);
+    }
+    if (!document.getElementById('email').value.includes('@')) missing.push('email');
+    if (!document.getElementById('resume').files.length) missing.push('resume');
+    for (const [id, s] of Object.entries(selects)) if (s.required && !s.value()) missing.push(id);
+    if (!selects.country.value() && !missing.includes('phone')) missing.push('phone');
+    for (const id of new Set(missing)) {
+      const label = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+      showError(id, (label ? label.textContent.replace('*', '') : id) + ' is required.');
+    }
+    if (missing.length) return;
+    if (params.get('code') === '1') codeStep(); else thanks();
+  });
+})();
+</script>
+</body>
+</html>
