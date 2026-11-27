@@ -1,5 +1,8 @@
-# Demo answers for Alex Example (synthetic). by_job starts empty: the demo plan asks
-# for the one question the rules cannot answer, and you add it here.
+# Demo answers for Alex Example (synthetic).
+# One question is left open on purpose: "Why do you want to join Example Corp?"
+# The rules cannot answer it from the profile, so `getmeajob plan` marks that job
+# needs_answers. Run `getmeajob plan unknowns --stub todo.yaml`, fill it in, then
+# `getmeajob plan answer todo.yaml` to see the job become ready.
 
 global:
   "Preferred work arrangement": Hybrid

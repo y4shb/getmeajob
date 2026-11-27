@@ -1,0 +1,184 @@
+{
+  "id": 1001,
+  "internal_job_id": 501001,
+  "title": "Senior Backend Engineer",
+  "updated_at": "2026-11-20T10:00:00-05:00",
+  "requisition_id": "EX-1001",
+  "location": {"name": "Remote - Worldwide"},
+  "absolute_url": "https://job-boards.greenhouse.io/examplecorp/jobs/1001",
+  "company_name": "Example Corp",
+  "content": "&lt;p&gt;Example Corp builds made-up software for the getmeajob demo. This posting is synthetic.&lt;/p&gt;&lt;h3&gt;What you will do&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Build and run backend services in Python on Postgres.&lt;/li&gt;&lt;li&gt;Ship to Kubernetes.&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;What you bring&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;3-5 years of professional experience.&lt;/li&gt;&lt;li&gt;Python, Postgres, Kubernetes.&lt;/li&gt;&lt;/ul&gt;",
+  "education": "education_optional",
+  "questions": [
+    {
+      "label": "First Name",
+      "required": true,
+      "description": null,
+      "fields": [{"name": "first_name", "type": "input_text", "values": []}]
+    },
+    {
+      "label": "Last Name",
+      "required": true,
+      "description": null,
+      "fields": [{"name": "last_name", "type": "input_text", "values": []}]
+    },
+    {
+      "label": "Email",
+      "required": true,
+      "description": null,
+      "fields": [{"name": "email", "type": "input_text", "values": []}]
+    },
+    {
+      "label": "Phone",
+      "required": true,
+      "description": null,
+      "fields": [{"name": "phone", "type": "input_text", "values": []}]
+    },
+    {
+      "label": "Resume/CV",
+      "required": true,
+      "description": null,
+      "fields": [
+        {"name": "resume", "type": "input_file", "values": []},
+        {"name": "resume_text", "type": "textarea", "values": []}
+      ]
+    },
+    {
+      "label": "Cover Letter",
+      "required": false,
+      "description": null,
+      "fields": [
+        {"name": "cover_letter", "type": "input_file", "values": []},
+        {"name": "cover_letter_text", "type": "textarea", "values": []}
+      ]
+    },
+    {
+      "label": "LinkedIn Profile",
+      "required": false,
+      "description": null,
+      "fields": [{"name": "question_2001", "type": "input_text", "values": []}]
+    },
+    {
+      "label": "Are you legally authorized to work in Canada?",
+      "required": true,
+      "description": null,
+      "fields": [
+        {
+          "name": "question_2002",
+          "type": "multi_value_single_select",
+          "values": [{"label": "Yes", "value": 1}, {"label": "No", "value": 0}]
+        }
+      ]
+    },
+    {
+      "label": "Will you now or in the future require sponsorship for employment visa status?",
+      "required": true,
+      "description": null,
+      "fields": [
+        {
+          "name": "question_2003",
+          "type": "multi_value_single_select",
+          "values": [{"label": "Yes", "value": 2101}, {"label": "No", "value": 2102}]
+        }
+      ]
+    },
+    {
+      "label": "How many years of professional software experience do you have?",
+      "required": true,
+      "description": null,
+      "fields": [
+        {
+          "name": "question_2004",
+          "type": "multi_value_single_select",
+          "values": [
+            {"label": "0-2", "value": 2201},
+            {"label": "3-5", "value": 2202},
+            {"label": "6-9", "value": 2203},
+            {"label": "10+", "value": 2204}
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Why do you want to join Example Corp?",
+      "required": true,
+      "description": "<p>A few sentences are enough.</p>",
+      "fields": [{"name": "question_2005", "type": "textarea", "values": []}]
+    },
+    {
+      "label": "Which of these have you used in production?",
+      "required": false,
+      "description": null,
+      "fields": [
+        {
+          "name": "question_2006[]",
+          "type": "multi_value_multi_select",
+          "values": [
+            {"label": "Python", "value": 11},
+            {"label": "Go", "value": 12},
+            {"label": "Kubernetes", "value": 13},
+            {"label": "Rust", "value": 14}
+          ]
+        }
+      ]
+    }
+  ],
+  "location_questions": [
+    {
+      "label": "Location (City)",
+      "required": true,
+      "description": null,
+      "fields": [{"name": "candidate-location", "type": "input_text", "values": []}]
+    }
+  ],
+  "compliance": [
+    {
+      "type": "eeoc",
+      "description": "<p>Example Corp is an equal opportunity employer. The questions below are voluntary and do not affect your application.</p>",
+      "questions": []
+    }
+  ],
+  "demographic_questions": {
+    "header": "Voluntary self-identification",
+    "description": "<p>Answering is voluntary. Your answers are kept apart from your application.</p>",
+    "questions": [
+      {
+        "id": 4001,
+        "label": "Gender",
+        "required": false,
+        "type": "multi_value_single_select",
+        "answer_options": [
+          {"id": 4101, "label": "Man", "free_form": false},
+          {"id": 4102, "label": "Woman", "free_form": false},
+          {"id": 4103, "label": "Non-binary", "free_form": false},
+          {"id": 4104, "label": "Decline to self-identify", "free_form": false}
+        ]
+      },
+      {
+        "id": 4002,
+        "label": "Race / Ethnicity",
+        "required": false,
+        "type": "multi_value_single_select",
+        "answer_options": [
+          {"id": 4201, "label": "Asian", "free_form": false},
+          {"id": 4202, "label": "Black or African American", "free_form": false},
+          {"id": 4203, "label": "Hispanic or Latino", "free_form": false},
+          {"id": 4204, "label": "White", "free_form": false},
+          {"id": 4205, "label": "Two or more races", "free_form": false},
+          {"id": 4206, "label": "Decline to self-identify", "free_form": false}
+        ]
+      },
+      {
+        "id": 4003,
+        "label": "Veteran status",
+        "required": false,
+        "type": "multi_value_single_select",
+        "answer_options": [
+          {"id": 4301, "label": "I am a protected veteran", "free_form": false},
+          {"id": 4302, "label": "I am not a protected veteran", "free_form": false},
+          {"id": 4303, "label": "Decline to self-identify", "free_form": false}
+        ]
+      }
+    ]
+  }
+}

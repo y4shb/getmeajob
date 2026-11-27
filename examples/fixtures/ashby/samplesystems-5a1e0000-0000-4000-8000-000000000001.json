@@ -1,0 +1,102 @@
+{
+  "data": {
+    "jobPosting": {
+      "id": "5a1e0000-0000-4000-8000-000000000001",
+      "title": "Platform Engineer",
+      "applicationForm": {
+        "id": "f0000000-0000-4000-8000-0000000000f1",
+        "sections": [
+          {
+            "title": null,
+            "fieldEntries": [
+              {
+                "id": "e0000000-0000-4000-8000-000000000001",
+                "field": {"path": "_systemfield_name", "type": "String", "title": "Name"},
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000002",
+                "field": {"path": "_systemfield_email", "type": "Email", "title": "Email"},
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000003",
+                "field": {"path": "_systemfield_resume", "type": "File", "title": "Resume"},
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000004",
+                "field": {"path": "c0ffee00-0000-4000-8000-0000000000a1", "type": "Phone", "title": "Phone"},
+                "isRequired": true,
+                "descriptionHtml": null
+              }
+            ]
+          },
+          {
+            "title": "A few questions",
+            "fieldEntries": [
+              {
+                "id": "e0000000-0000-4000-8000-000000000005",
+                "field": {
+                  "path": "c0ffee00-0000-4000-8000-0000000000a2",
+                  "type": "Boolean",
+                  "title": "Will you require visa sponsorship to work in Canada?"
+                },
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000006",
+                "field": {
+                  "path": "c0ffee00-0000-4000-8000-0000000000a3",
+                  "type": "Location",
+                  "title": "Where are you currently located?"
+                },
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000007",
+                "field": {
+                  "path": "c0ffee00-0000-4000-8000-0000000000a4",
+                  "type": "Number",
+                  "title": "How many years of professional experience do you have?"
+                },
+                "isRequired": true,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000008",
+                "field": {
+                  "path": "c0ffee00-0000-4000-8000-0000000000a5",
+                  "type": "ValueSelect",
+                  "title": "Preferred work arrangement",
+                  "selectableValues": [
+                    {"label": "Remote", "value": "remote"},
+                    {"label": "Hybrid", "value": "hybrid"},
+                    {"label": "Onsite", "value": "onsite"}
+                  ]
+                },
+                "isRequired": false,
+                "descriptionHtml": null
+              },
+              {
+                "id": "e0000000-0000-4000-8000-000000000009",
+                "field": {
+                  "path": "c0ffee00-0000-4000-8000-0000000000a6",
+                  "type": "LongText",
+                  "title": "Anything else you would like us to know?"
+                },
+                "isRequired": false,
+                "descriptionHtml": null
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

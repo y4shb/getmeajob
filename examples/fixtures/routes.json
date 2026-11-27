@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "method": "POST",
+    "url_contains": "jobs.ashbyhq.com/api/non-user-graphql",
+    "body_contains": "5a1e0000-0000-4000-8000-000000000001",
+    "file": "ashby/samplesystems-5a1e0000-0000-4000-8000-000000000001.json",
+    "status": 200
+  }
+]

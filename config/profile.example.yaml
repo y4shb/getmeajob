@@ -1,6 +1,7 @@
-# Your profile. Form answers come only from this file, so fill in what is true for you.
-# Leave a field empty when you do not want getmeajob to answer it; the question then
-# shows up as an "unknown" for you to answer yourself.
+# Your profile. Form answers come only from this file and answers.yaml, so
+# fill in what is true for you. Leave a field empty when you do not want getmeajob to
+# answer it: a required question then shows up as an "unknown" for you to answer
+# yourself, and an optional one is left blank. getmeajob never guesses a missing fact.
 # This file stays in your workspace and is never committed (see .gitignore).
 
 identity:
@@ -28,7 +29,7 @@ location:
   country:
   postal_code:
   timezone:             # for example America/Toronto
-  city_aliases: []      # other names for your city that job posts use
+  city_aliases: []      # other names for your city that forms list as options
   willing_to_relocate:  # true or false
   open_to_hybrid:       # true or false
   open_to_onsite:       # true or false
@@ -36,6 +37,7 @@ location:
 eligibility:
   authorized_countries: []         # countries where you may work today
   needs_sponsorship_countries: []  # countries where you would need a visa sponsor
+  # Work-permit and sponsorship questions are answered only for countries in these lists.
   citizenship:
   over_18:                         # true or false
   background_check_ok:             # true or false
@@ -51,7 +53,7 @@ experience:
   notice_period:       # for example 2 weeks
   earliest_start:      # a date (YYYY-MM-DD) or text such as "after notice period"
   former_employers: []
-  primary_languages: [] # programming languages you use most
+  primary_languages: [] # languages you use most; "experience with X?" is Yes only for these
 
 education:  # one entry per school, most recent first
   - school:

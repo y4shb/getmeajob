@@ -1,17 +1,21 @@
 # Your own answers to form questions the rules cannot answer from your profile.
-# The most specific answer wins: by_job, then by_company, then global.
+# The most specific answer wins: by_job, then by_company, then global, then the rules.
 # `getmeajob plan unknowns --stub FILE` writes the open questions for you to fill in,
 # and `getmeajob plan answer FILE` merges them back here.
+# Only write what is true for you: these answers go into your applications.
 
 # Answers for any job, keyed by the question label as the form shows it.
-# Example:  "Preferred work arrangement": Hybrid
+# Case, "*" and a trailing "?" do not matter. For a choice, use the option text.
+# Example:  "Were you referred by a current employee?": "No"
 global: {}
 
-# Answers for one company, keyed by its board slug, then by question label.
+# Answers for one company, keyed by its board slug (or company name), then by label.
 # Example:  examplecorp: {"Why do you want to join Example Corp?": "..."}
 by_company: {}
 
 # Answers for one job, keyed by job key, then by question id or label.
-# A value can be text, or {value: ..., needs_review: true} for drafts you still need to check.
+# A value can be text, a list (multi-choice), or {value: ..., needs_review: true}.
+# Drafts from `getmeajob plan draft` look like {value: ..., needs_review: true,
+# source: draft} until you check them and run `getmeajob plan approve KEY`.
 # Example:  "greenhouse:examplecorp:1001": {question_2005: "..."}
 by_job: {}

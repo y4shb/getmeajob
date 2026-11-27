@@ -1,0 +1,510 @@
+# Default answer rules for getmeajob plan.
+#
+# Rules are tried in order and the first one that fits a question wins. A rule fits when
+# one of its `match` patterns is found in the question label (normalised: lower case,
+# no "*" or "(required)", no trailing "?" or ":") and none of its `exclude` patterns is,
+# and the question type is in `types` (no `types` means any type). Patterns are Python
+# regular expressions. Rules of kind `never` also look at the question description.
+#
+# Every answer comes from profile.yaml. When the profile field is empty the question
+# becomes an "unknown" (required) or is left blank (optional). Nothing is guessed.
+# Put your own rules in rules.yaml in the workspace; they are tried before these, and a
+# rule there with the same id replaces the one here. See docs/planning.md.
+
+version: 1
+
+# Type groups, reused below through YAML anchors.
+type_groups:
+  text: &text [text, email, phone, url]
+  link: &link [text, url]
+  short: &short [text, select]
+  choice: &choice [select, boolean]
+  choice_or_text: &choice_or_text [select, boolean, text]
+  ticks: &ticks [select, multiselect, boolean]
+
+# Words that point at other people, not the candidate.
+people_words: &people
+  - '\breferr'
+  - '\breference'
+  - '\bemergency'
+  - '\bmanager'
+  - '\brecruiter'
+  - '\bsupervisor'
+  - '\bcompany'
+  - '\bschool'
+  - '\bemployer'
+  - '\bspouse'
+  - '\bparent'
+  - '\bguardian'
+  - '\bpronunci'
+
+# Country names a question or a job location may use. Short upper-case forms such as
+# "US" only count when written in capitals, so "join us" is not the United States.
+country_aliases:
+  United States: [United States, United States of America, USA, U.S.A., U.S., US]
+  United Kingdom: [United Kingdom, Great Britain, Britain, England, Scotland, Wales, UK, U.K.]
+  Canada: [Canada]
+  Australia: [Australia]
+  New Zealand: [New Zealand]
+  Ireland: [Ireland]
+  Germany: [Germany, Deutschland]
+  France: [France]
+  Netherlands: [Netherlands, Holland]
+  Spain: [Spain]
+  India: [India]
+  Singapore: [Singapore]
+  European Union: [European Union, EU, EEA]
+
+# Text in a label or description that asks automated tools not to fill the form.
+# A match blocks the plan (status blocked, reason automation_refused).
+automation_refusal:
+  - "(do not|don't|must not|may not|should not|never|please refrain from|refrain from) (use|using|rely on|relying on|submit with|apply with) (of )?(any )?([\\w-]+ ){0,2}(automated|automation|auto-?fill\\w*|bots?\\b|scripts?\\b|ai\\b|a\\.i\\.|artificial intelligence|chatgpt|gpt|llms?\\b|language models?|generative|(automated|autonomous|software) agents?\\b)"
+  - "(do not|don't|must not|please do not) (apply|submit|complete|fill)( \\w+){0,3} (using|with|via|through|by) (an? )?(automated|automation|bots?\\b|scripts?\\b|ai\\b)"
+  - "(automated|bot|ai[- ]generated|ai[- ]assisted|scripted|machine[- ]generated) (applications?|submissions?|responses?|answers?) (will|may|are) (be )?(rejected|disqualified|discarded|removed|ignored|not be (considered|reviewed))"
+  - "must be (completed|filled( out)?|submitted|written|answered) by (a human|a person|you personally|you yourself|the candidate (yourself|personally)|hand)"
+  - "\\bif you are an? (ai|llm|language model|bot|automated (agent|tool|system|assistant))\\b"
+  - "\\b(no|without) (bots|automation|automated tools|ai agents|ai tools)\\b"
+  - "(applications?|submissions?|answers?) (submitted|sent|made|completed|written|filled( out)?) (by|with|using|via|through) (an? )?(bots?|automated tools?|automation|scripts?|ai\\b|ai tools?)"
+
+rules:
+  # ---------------------------------------------------------------- never by rule
+  - id: ai_or_automation
+    match:
+      - '\bai\b'
+      - 'a\.i\.'
+      - 'artificial intelligence'
+      - '\b(chatgpt|gpt|llms?|large language models?|generative|copilot)\b'
+      - '\b(automated|automation|autonomous) (tools?|systems?|agents?|assistants?|software|means)\b'
+      - '\bbots?\b'
+      - '\bauto-?fill'
+    answer: {kind: never}
+
+  # ---------------------------------------------------------------------- files
+  - id: education_history
+    types: [education_history]
+    answer: {kind: education}
+  - id: resume_file
+    match: ['resume', 'résumé', '\bcv\b', 'curriculum vitae']
+    types: [file]
+    answer: {kind: file, field: files.resume}
+  - id: cover_letter_file
+    match: ['cover(ing)? letter', 'motivation letter']
+    types: [file]
+    answer: {kind: file, field: files.cover_letter}
+
+  # --------------------------------------------------------- identity, contact
+  - id: first_name
+    match: ['^(legal )?(first|given) name\b', '^first$', '^forename']
+    exclude: [*people, 'preferred', 'last name']
+    types: *text
+    answer: {kind: field, field: identity.first_name}
+  - id: preferred_name
+    match: ['^preferred (first )?name', '^(the )?name you (go by|prefer)', '^nickname']
+    exclude: *people
+    types: *text
+    answer: {kind: field, field: identity.preferred_name|identity.first_name}
+  - id: last_name
+    match: ['^(legal )?(last|family) name\b', '^surname', '^last$']
+    exclude: *people
+    types: *text
+    answer: {kind: field, field: identity.last_name}
+  - id: full_name
+    match:
+      - '^(your )?((full|legal|complete) )*name$'
+      - '^(your )?((full|legal|complete) )+name\b'
+      - '^first and last name'
+      - '^name \(first'
+    exclude: [*people, 'preferred']
+    types: *text
+    answer: {kind: field, field: identity.full_name}
+  - id: email
+    match: ['^(your )?e-?mail( address)?$', '\be-?mail address\b', '^(confirm|re-?enter) (your )?e-?mail']
+    exclude: *people
+    types: *text
+    answer: {kind: field, field: contact.email}
+  - id: phone_country_code
+    match: ['(phone|country|dial(l)?ing) code']
+    types: [text, select, phone]
+    answer: {kind: field, field: contact.phone_country_code}
+  - id: phone
+    match: ['\b(phone|mobile|cell|telephone)( number)?\b', '\bcontact number\b']
+    exclude: [*people, 'whatsapp', 'screen', 'interview']
+    types: [text, phone]
+    answer: {kind: field, field: contact.phone}
+
+  # ---------------------------------------------------------------------- links
+  - id: linkedin
+    match: ['\blinked ?in\b']
+    exclude: ['how did you', 'where did you', 'hear about', 'source']
+    types: *link
+    answer: {kind: field, field: links.linkedin}
+  - id: github
+    match: ['\bgit ?hub\b']
+    exclude: ['how did you', 'where did you', 'hear about', 'actions', 'copilot']
+    types: *link
+    answer: {kind: field, field: links.github}
+  - id: portfolio
+    match: ['\bportfolio\b']
+    types: *link
+    answer: {kind: field, field: links.portfolio|links.website}
+  - id: website
+    match:
+      - '\b(personal )?(web ?site|homepage)\b'
+      - 'personal (site|url|page)'
+      - '\bblog\b'
+      - '\bother (urls?|links?|profiles?)\b'
+      - '^(urls?|links?)$'
+    exclude: ['company', 'our ', 'how did you', 'hear about']
+    types: *link
+    answer: {kind: field, field: links.website|links.portfolio}
+  - id: other_social
+    match:
+      - 'twitter'
+      - '\bx\.com\b'
+      - 'stack ?overflow'
+      - 'kaggle'
+      - 'leetcode'
+      - 'hackerrank'
+      - 'dribbble'
+      - 'behance'
+      - 'mastodon'
+      - 'bluesky'
+      - 'instagram'
+      - 'facebook'
+    types: *link
+    answer: {kind: skip_optional}
+
+  # --------------------------------------------------------- legal boilerplate
+  - id: sanctions
+    match: ['\b(cuba|iran|north korea|syria|crimea|donetsk|luhansk)\b', 'sanction', 'export control', 'embargo']
+    answer: {kind: skip_optional}
+  - id: age_18
+    match:
+      - '\b18 years\b'
+      - 'age of 18'
+      - '\b(over|at least|older than) (the age of )?18\b'
+      - '\b18\+'
+      - '\b18 or older'
+      - '\blegal (working )?age\b'
+    types: *choice_or_text
+    answer: {kind: yes_no, field: eligibility.over_18}
+  - id: government_official
+    match:
+      - '\b(government|public|foreign|political) official\b'
+      - 'politically exposed'
+      - '\bpep\b'
+      - '\b(hold|held|holding|served in) (a |an |any )?(government|public|political|elected) (office|position|role)'
+      - '\b(employee|officer|official) of (a |an |any )?(government|state[- ]owned)'
+    types: *choice_or_text
+    answer: {kind: yes_no, field: eligibility.government_official}
+  - id: relatives_or_conflicts
+    match:
+      - '\b(related to|relationship with|relative of) (a |an |any )?(current )?(employee|staff|member|director|officer|board|executive|person (working|employed))'
+      - '\brelatives?\b.*\b(work|employ)'
+      - '\bfamily members?\b.*\b(work|employ)'
+      - 'conflicts? of interest'
+      - 'close personal relationship'
+    answer: {kind: skip_optional}
+  - id: noncompete
+    match: ['non-?compete', 'non-?solicit', 'restrictive covenant', 'bound by (any |an )?(agreement|contract|covenant)']
+    types: *choice_or_text
+    answer: {kind: yes_no, field: eligibility.has_noncompete}
+  - id: background_check
+    match: ['background (check|screening|verification|investigation)']
+    types: *choice_or_text
+    answer: {kind: yes_no, field: eligibility.background_check_ok}
+  - id: drug_test
+    match: ['drug (test|screen)']
+    types: *choice_or_text
+    answer: {kind: yes_no, field: eligibility.drug_test_ok}
+  - id: consent_future
+    match:
+      - 'future (job )?(opportunit|roles?|positions?|openings?|vacanc)'
+      - 'talent (pool|community|network)'
+      - 'keep (me|my (information|details|application|cv|resume|data)) (informed|on file|in mind|for)'
+      - '(retain|keep|store) my (data|information|details|application) (for|to be considered)'
+    types: *ticks
+    answer: {kind: consent, field: consent.future_opportunities}
+  - id: consent_privacy
+    match:
+      - 'privacy (notice|policy|statement)'
+      - '\bconsent\b'
+      - '\backnowledg'
+      - '^i (have read|agree|accept|understand|confirm|hereby)'
+      - 'terms (and|&) conditions'
+      - '\btrue,? (and|&) (complete|accurate|correct)\b'
+      - '\battest\b'
+      - 'data (processing|protection|privacy)'
+      - '\bgdpr\b'
+      - '(process|processing|retain|store|storing) (of )?my (personal )?(data|information)'
+      - '\bcertify that\b'
+    exclude: ['\bcertifications?\b', '\bcertified\b', '\bcertificates?\b']
+    types: *ticks
+    answer: {kind: consent, field: consent.privacy_notice}
+
+  # -------------------------------------------------------- work authorization
+  - id: sponsorship
+    match: ['\bsponsor']
+    exclude: ['sponsor(ed|ing|s)? (events?|content|conferences?|hackathons?|meetups?)']
+    types: *choice_or_text
+    answer: {kind: sponsorship}
+  - id: work_authorization
+    match:
+      - 'authori[sz]ed to work'
+      - 'work authori[sz]ation'
+      - '(eligible|eligibility|permitted|allowed|able|entitled) (to|for) (legally )?(work|employment|be employed)'
+      - 'right to work'
+      - 'legally (able|permitted|authori[sz]ed|allowed|entitled|eligible)'
+      - '\bwork permit\b'
+    exclude: ['\b(gender|race|veteran|disabilit)']
+    types: *choice_or_text
+    answer: {kind: work_authorization}
+  - id: citizenship
+    match: ['citizenship', 'nationality', 'citizen of', '^citizen']
+    types: *short
+    answer: {kind: field, field: eligibility.citizenship}
+
+  # ------------------------------------------------ prior employment and source
+  - id: former_employee
+    match:
+      - '\b(previously|ever|currently|formerly|before|in the past)\b.*\b(worked|work|been employed|employed|contracted|interned|been an? (employee|contractor|intern))\b.*\b(for|at|with|by)\b'
+      - '\bformer (employee|contractor|intern)\b'
+      - '\bhave you (ever )?(been )?(employed|worked) (by|for|at|with)\b'
+      - '\bare you (a |an )?(current|former) .{0,40}(employee|contractor|intern)\b'
+    exclude: ['\breferr', '\brelative', '\bfamily']
+    types: *choice
+    answer: {kind: former_employer}
+  - id: referrer_name
+    match:
+      - '\b(who|name of the (person|employee)|employee name).{0,40}refer'
+      - '\brefer\w*\b.{0,30}\b(name|who)\b'
+      - '\breferr(er|ed by)\b'
+    types: [text]
+    answer: {kind: skip_optional}
+  - id: were_referred
+    match: ['were you referred', '\breferral\b', 'referred by', 'did (an?|any) (employee|someone|anyone|person) refer']
+    types: *choice
+    answer: {kind: skip_optional}
+  - id: how_did_you_hear
+    match:
+      - 'how did you (first )?(hear|find|learn|come across|discover|find out)'
+      - 'where did you (first )?(hear|find|see|learn|come across)'
+      - '^(application |candidate |job |lead |referral )?source$'
+      - '^source of (application|referral)'
+    exclude: ['open[- ]source']
+    answer:
+      kind: choice_from
+      field: source.how_did_you_hear
+      options_pref:
+        - 'careers page=career|company (web)?site|our (web)?site|^website'
+        - 'company website=career|company (web)?site|our (web)?site|^website'
+        - 'linkedin=linked ?in'
+        - 'job board=job board|indeed|glassdoor|job site'
+        - 'referral=referr|employee'
+        - 'friend=friend|word of mouth'
+        - 'search engine=google|search'
+
+  # ------------------------------------------------------ voluntary self-ID (EEO)
+  - id: eeo_pronouns
+    match: ['pronoun']
+    answer: {kind: eeo, field: eeo.pronouns|identity.pronouns}
+  - id: eeo_gender
+    match: ['\bgender\b', '\bsex\b']
+    exclude: ['orientation', 'transgender']
+    answer: {kind: eeo, field: eeo.gender}
+  - id: eeo_race
+    match: ['\brace\b', 'ethnic', 'hispanic', '\blatin[oax]\b']
+    answer: {kind: eeo, field: eeo.race}
+  - id: eeo_veteran
+    match: ['veteran', 'military (service|status)', 'armed forces']
+    answer: {kind: eeo, field: eeo.veteran}
+  - id: eeo_disability
+    match: ['disabilit', '\bdisabled\b']
+    answer: {kind: eeo, field: eeo.disability}
+  - id: eeo_other
+    match: ['sexual orientation', 'transgender', '\blgbt', '\bcaste\b', 'religio', 'marital status']
+    answer: {kind: eeo}
+
+  # ------------------------------------------------------------------ location
+  - id: relocation
+    match: ['relocat']
+    types: *choice_or_text
+    answer: {kind: yes_no, field: location.willing_to_relocate}
+  - id: hybrid
+    match:
+      - '\bhybrid\b'
+      - '\b([1-4]|one|two|three|four) days? (a|per|each) week\b.*\b(office|on[- ]?site|in[- ]person)'
+      - '\b(office|on[- ]?site|in[- ]person)\b.*\b([1-4]|one|two|three|four) days? (a|per|each) week'
+    types: *choice
+    answer: {kind: yes_no, field: location.open_to_hybrid}
+  - id: onsite
+    match: ['\bon[- ]?site\b', '\bin[- ]office\b', '\bin[- ]person\b', 'work(ing)? (from|in|at) (the |our )?office', '\bcommut']
+    types: *choice
+    answer: {kind: yes_no, field: location.open_to_onsite}
+  - id: country
+    match:
+      - '^country$'
+      - '^country of residence'
+      - 'which country'
+      - 'current country'
+      - '^country\b'
+      - 'country (do you|are you) (currently )?(live|located|based|reside)'
+      - '\bcountry you (live|reside|are based)'
+    exclude: ['citizenship', 'authori', 'sponsor', 'code', 'phone', 'dial']
+    types: [text, select, location]
+    answer: {kind: field, field: location.country}
+  - id: state
+    match: ['^state\b(?!ment)', '^province\b', '^state ?(/|or) ?province', '^region$', '^(your )?(state|province) of residence']
+    types: *short
+    answer: {kind: field, field: location.state}
+  - id: postal_code
+    match: ['postal ?code', '\bzip( ?code)?\b', '\bpost ?code\b']
+    types: [text]
+    answer: {kind: field, field: location.postal_code}
+  - id: city
+    match: ['^city$', '^(current )?city\b', 'city of residence', '^town\b']
+    exclude: ['preferred', 'which (of our )?(office|location)']
+    types: [text, select, location]
+    answer: {kind: field, field: location.city}
+  - id: location
+    match:
+      - 'where are you (currently )?(located|based|living)'
+      - 'where do you (currently )?(live|reside)'
+      - '^(current |your |home )?location\b'
+      - '\bcurrent location\b'
+    exclude: ['preferred', 'which (of our )?(offices?|locations?)', 'willing', 'relocat', 'open to']
+    types: [text, select, location]
+    answer: {kind: location}
+  - id: timezone
+    match: ['time ?zone']
+    types: *short
+    answer: {kind: field, field: location.timezone}
+
+  # --------------------------------------------------------- employment details
+  - id: notice_or_start
+    match:
+      - 'notice period'
+      - 'when (can|could|would) you (start|join|begin)'
+      - 'earliest (possible )?(start|joining|available)'
+      - 'availability to (start|join)'
+      - '^(desired |available |earliest )?start date'
+      - 'available to start'
+      - 'how soon (can|could) you'
+    types: [text, select, date]
+    answer: {kind: field, field: experience.earliest_start|experience.notice_period}
+  - id: employment_status
+    match: ['currently employed', 'are you (currently )?employed', 'employment status', '^current employment']
+    types: [text, select, boolean]
+    answer:
+      kind: choice_from
+      field: experience.employment_status
+      options_pref:
+        - 'not employed=^no\b|not (currently )?employed|unemployed'
+        - 'unemployed=^no\b|not (currently )?employed|unemployed'
+        - 'self-employed=self[- ]employed|freelanc|contractor'
+        - 'student=student'
+        - 'employed=^yes\b|^employed|full[- ]time|currently employed'
+  - id: current_company
+    match:
+      - '\b(current|most recent|present|latest) (company|employer|firm|organi[sz]ation)\b'
+      - '^(company|employer)( name)?$'
+    exclude: ['\breferr', 'previous', 'former', 'status']
+    types: *short
+    answer: {kind: field, field: experience.current_company}
+  - id: current_title
+    match: ['\b(current|most recent|present|latest) (job )?(title|role|position|designation)\b', '^(job )?title$', '^(current )?job title']
+    types: *short
+    answer: {kind: field, field: experience.current_title}
+
+  # -------------------------------------------------------------- compensation
+  - id: current_compensation
+    match:
+      - '\b(current|present|most recent) (annual |yearly |base |total )*(ctc|salary|compensation|pay|remuneration|package|wage)'
+      - '\blast drawn\b'
+    types: [text, select, number]
+    answer: {kind: current_compensation, field: compensation.current_text}
+  - id: expected_compensation
+    match:
+      - '\b(expected|desired|target|anticipated|requested) (annual |yearly |base |total )*(salary|compensation|pay|ctc|remuneration|rate|wage|package)\b'
+      - '\bsalary (expectations?|requirements?|range)\b'
+      - '\bcompensation (expectations?|requirements?)\b'
+      - '\bpay (expectations?|requirements?)\b'
+      - '\b(salary|compensation|pay) (do|would) you (expect|require|want)'
+    types: [text, textarea, select, number]
+    answer: {kind: compensation, field: compensation.expected_text}
+  - id: compensation_other
+    match: ['\bsalary\b', '\bcompensation\b', '\bctc\b', '\bpay\b', '\bwages?\b', '\bremuneration\b']
+    exclude: ['transparency', 'equal pay', 'pay (equity|range is)', 'paid time off', 'workers.? compensation']
+    answer: {kind: compensation, field: compensation.expected_text}
+
+  # -------------------------------------------------------- years of experience
+  - id: years_threshold
+    match:
+      - '\b(more than|less than|fewer than|at least|minimum( of)?|over|under)\s*\d+\+?\s*(years?|yrs?)\b'
+      - '\b\d+\+\s*(years?|yrs?)\b'
+      - '\b\d+ or more (years?|yrs?)\b'
+    exclude: ['years old', '\bage\b']
+    types: *choice
+    answer: {kind: years_threshold, field: experience.total_years}
+  - id: primary_language
+    match: ['primary (programming )?language', 'main (programming )?language']
+    types: *choice_or_text
+    answer: {kind: primary_language, field: experience.primary_languages}
+  - id: total_years
+    match:
+      - '\byears (of )?([\w-]+ ){0,3}experience\b'
+      - '\bhow many years\b'
+      - '\btotal (work )?experience\b'
+      - '\byoe\b'
+    exclude: ['\bold\b', '\bage\b', 'graduat']
+    types: [select, number, text]
+    answer: {kind: years, field: experience.total_years}
+
+  # ------------------------------------------------------------------ education
+  - id: graduation
+    match:
+      - 'graduat(ion|ed|e)?\b.*\b(year|date)'
+      - '\b(year|date) of graduation'
+      - '\bclass of\b'
+      - 'when did you graduate'
+      - 'expected graduation'
+    types: [text, select, date, number]
+    answer: {kind: field, field: education.0.end_year}
+  - id: degree
+    match:
+      - '^degree\b'
+      - 'highest (level of )?(education|degree|qualification)'
+      - '\beducation(al)? level\b'
+      - '\blevel of (education|study)'
+      - '\bdegree (type|level|obtained|earned)\b'
+      - '^(highest )?qualification'
+    types: *short
+    answer:
+      kind: choice_from
+      field: education.0.degree|education.0.degree_level
+      options_pref:
+        - 'bachelor=bachelor|\bb\.? ?(sc|s|a|eng|e|tech)\b|undergraduate'
+        - 'master=master|\bm\.? ?(sc|s|a|eng|tech)\b|\bmba\b'
+        - 'phd=ph\.? ?d|doctor'
+        - 'doctor=ph\.? ?d|doctor'
+        - 'associate=associate'
+        - 'high school=high school|secondary|\bged\b'
+  - id: discipline
+    match: ['\b(major|discipline|field of study|area of study|concentration|subject studied)\b']
+    types: *short
+    answer: {kind: field, field: education.0.discipline}
+  - id: school
+    match: ['\b(school|university|college|institution)\b']
+    exclude: ['high school', 'secondary school', 'graduat', 'degree', 'major', 'gpa', 'grade']
+    types: *short
+    answer: {kind: field, field: education.0.school}
+
+  # -------------------------------------------------------------------- skills
+  - id: skill_yes_no
+    match:
+      - '\b(experience|proficien\w*|familiar\w*|worked|work|comfortable|skilled|expertise)\b.{0,20}\b(with|in|using)\b'
+      - '\bhands[- ]on\b'
+      - '\bknowledge of\b'
+      - '\bdo you (know|use|have experience)\b'
+    types: *choice
+    answer: {kind: skill_yes_no, field: experience.primary_languages}
