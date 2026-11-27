@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "getmeajob"
 version = "0.1.0"
 description = "A job hunt as a pipeline of plain scripts that agents drive: source, rank, plan, apply, track."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
