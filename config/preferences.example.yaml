@@ -50,6 +50,9 @@ locations:
       kind: other
       score: 0.0
   allowed_regions: []  # regions a "remote" job may be limited to and still suit you
+  # Extra names for a region, if job posts use one the built-in list lacks. Example:
+  #   region_aliases: {united kingdom: [uk, britain]}
+  region_aliases: {}
 
 skills:
   have: {}   # skills you have, with a weight, for example {python: 3, postgres: 2}

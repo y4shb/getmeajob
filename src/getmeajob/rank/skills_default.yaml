@@ -1,0 +1,124 @@
+# Common skills and the pattern that finds each in a job description.
+#
+# A plain value is a regex, matched ignoring case, and only when it stands alone: a
+# letter, digit or underscore may not touch either end. So `java` never matches inside
+# `javascript`. A mapping value can set:
+#   regex: the pattern, or a list of patterns (any one may match)
+#   case_sensitive: true to match capital letters exactly
+#   raw: true to skip the stand-alone check (the pattern handles its own boundaries)
+#   aliases: other names for the same skill, so `postgresql` in your preferences finds the
+#            same text as `postgres`
+# Add your own skills in preferences.yaml: a name that is not listed here is searched
+# for as plain text.
+
+python: 'python3?'
+java: 'java'
+javascript: 'javascript|ecmascript|\bjs\b'
+typescript: 'typescript'
+go:
+  # "Go" only counts as the language in a programming context: a list of languages,
+  # "experience in Go", "Go services". "go to market" and "go-getter" do not match.
+  regex:
+    - '(?i:(?<![\w-])golang(?![\w-]))'
+    - '(?<![\w-])(?:(?<=[,/(&] )|(?<=[,/(&])|(?<=\bin )|(?<=\bwith )|(?<=\band )|(?<=\bor )|(?<=\busing )|(?<=\bwriting )|(?<=\bwrite )|(?<=\bbuild )|(?<=\buse )|(?<=\bknow )|(?<=\bof )|(?<=\bfor )|(?<=\bfluent in ))Go(?![\w-])(?!\s+(?:to|live|forward|ahead|through|beyond|wild|out|big|home)\b)'
+    - '(?<![\w-])Go(?=\s*[,/)])'
+    - '(?<![\w-])Go(?=\s+(?:programming|developer|language|services?|microservices?|backend|codebase|engineer|shop)\b)'
+    - '(?<![\w-])Go(?=\s+(?:and|or|&)\s+[A-Z])'
+  case_sensitive: true
+  raw: true
+  aliases: [golang]
+rust: 'rust'
+scala: 'scala'
+kotlin: 'kotlin'
+swift:
+  regex: 'Swift'
+  case_sensitive: true
+ruby: 'ruby'
+php: 'php'
+c++: 'c\+\+'
+c#: 'c#'
+sql: 'sql|t-sql|pl/sql'
+nosql: 'nosql'
+postgres:
+  regex: 'postgres(?:ql)?'
+  aliases: [postgresql]
+mysql: 'mysql|mariadb'
+mongodb:
+  regex: 'mongo(?:db)?'
+  aliases: [mongo]
+redis: 'redis'
+kafka: 'kafka'
+rabbitmq: 'rabbitmq'
+elasticsearch: 'elasticsearch|opensearch'
+kubernetes:
+  regex: 'kubernetes|k8s'
+  aliases: [k8s]
+docker: 'docker'
+helm:
+  regex: 'Helm'
+  case_sensitive: true
+terraform: 'terraform'
+ansible: 'ansible'
+aws:
+  regex: 'aws|amazon web services'
+gcp:
+  regex: 'gcp|google cloud'
+  aliases: [google cloud]
+azure: 'azure'
+linux: 'linux'
+git: 'git'
+ci/cd:
+  regex: 'ci ?/ ?cd|continuous (?:integration|delivery|deployment)'
+  aliases: [cicd, ci]
+jenkins: 'jenkins'
+github actions: 'github actions'
+graphql: 'graphql'
+grpc: 'grpc'
+rest:
+  regex: 'REST(?:ful)?(?: ?APIs?)?|[Rr]estful'
+  case_sensitive: true
+  aliases: [restful, rest api]
+api: 'apis?'
+microservices: 'microservices?'
+serverless: 'serverless|lambda functions?'
+fastapi: 'fastapi'
+django: 'django'
+flask: 'flask'
+spring: 'spring boot|spring framework'
+node.js:
+  regex: 'node\.?js|nodejs'
+  aliases: [nodejs, node]
+react:
+  regex: 'React(?:\.js|JS)?(?!\s+to\b)'
+  case_sensitive: true
+vue: 'vue(?:\.js)?'
+angular: 'angular'
+next.js:
+  regex: 'next\.?js'
+  aliases: [nextjs]
+.net:
+  regex: '(?<![A-Za-z0-9])(?:\.net|dotnet|asp\.net)(?![A-Za-z0-9_])'
+  raw: true
+  aliases: [dotnet]
+spark: 'spark|pyspark'
+airflow: 'airflow'
+dbt:
+  regex: 'dbt'
+snowflake: 'snowflake'
+bigquery: 'bigquery'
+pandas: 'pandas'
+numpy: 'numpy'
+pytorch: 'pytorch'
+tensorflow: 'tensorflow'
+machine learning:
+  regex: 'machine learning|\bml\b'
+  aliases: [ml]
+llm:
+  regex: 'llms?|large language models?'
+  aliases: [llms]
+prometheus: 'prometheus'
+grafana: 'grafana'
+datadog: 'datadog'
+observability: 'observability|monitoring'
+testing: 'unit tests?|integration tests?|test[- ]driven|tdd|pytest|junit'
+agile: 'agile|scrum'

@@ -1,0 +1,55 @@
+# Your fact bank. Everything a resume may say lives here, written by you.
+#
+# getmeajob never writes or rewords anything. For each job it only chooses which of these
+# sentences to show and in what order, copied word for word. Words a job asks for that are
+# not here show up as "gaps" in the report and are never added.
+#
+# Rules for good facts: one achievement per bullet, start with what you did, and put real
+# numbers only where they are true. Bullet ids must be unique.
+
+header:
+  name:                 # required: the name shown at the top
+  email:
+  phone:
+  location:             # for example "City, Region, Country"
+  links: []             # profile and portfolio addresses, one per line
+
+# One or more opening lines. The one that fits the job best is used.
+summaries: []
+#  - id: sum-1
+#    text: Your own one-sentence summary.
+#    tags: [backend, python]     # words that make this line fit a job
+
+# Newest first. `short` is an optional shorter wording you wrote yourself; it is used
+# only when the page is too full.
+experience: []
+#  - company: Example Ltd
+#    title: Software Engineer
+#    start: "2021-06"
+#    end: present
+#    bullets:
+#      - id: api-1
+#        text: Built a billing API in Python that handles two million requests a day.
+#        tags: [python, api, backend]
+#        short: Built a Python billing API handling two million requests a day.
+
+# Optional. A project is shown only when it matches the job.
+projects: []
+#  - name: Tracker
+#    bullets:
+#      - id: tracker-1
+#        text: Wrote a small command line tool for tracking habits.
+#        tags: [python, cli]
+
+# Group your skills any way you like. The ones a job names are listed first in each group,
+# and groups the job names most come first.
+skills: {}
+#  languages: [Python, SQL]
+#  infrastructure: [Docker, AWS]
+
+education: []
+#  - school: Example State University
+#    degree: Bachelor of Science
+#    field: Computer Science
+#    start: "2017"
+#    end: "2021"

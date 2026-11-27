@@ -1,0 +1,25 @@
+# Common names for regions, so "US", "U.S." and "United States" count as the same place.
+# This is a plain reference table. Your own home country and regions come from
+# preferences.yaml; add more names there under `locations.region_aliases`.
+# Short upper-case names (two or three letters) are matched only in capitals, so "us"
+# in "tell us" is not read as a country.
+
+united states: [us, usa, u.s., u.s.a., united states of america, america]
+united kingdom: [uk, u.k., great britain, britain]
+canada: []
+european union: [eu, europe, european economic area, eea]
+emea: [emea]
+apac: [apac, asia pacific]
+latam: [latam, latin america]
+india: []
+australia: []
+germany: []
+france: []
+brazil: []
+mexico: []
+japan: []
+singapore: []
+ireland: []
+netherlands: []
+spain: []
+poland: []
