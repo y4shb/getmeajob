@@ -1,0 +1,12 @@
+{
+  "name": "getmeajob",
+  "description": "The getmeajob plugin for Claude Code: slash commands and a skill that drive the getmeajob command line.",
+  "owner": { "name": "getmeajob contributors" },
+  "plugins": [
+    {
+      "name": "getmeajob",
+      "source": "./agents/claude-plugin",
+      "description": "Slash commands and a skill that run getmeajob and keep the model on judgment, not form filling."
+    }
+  ]
+}

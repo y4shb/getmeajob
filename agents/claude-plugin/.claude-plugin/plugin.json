@@ -1,0 +1,8 @@
+{
+  "name": "getmeajob",
+  "version": "0.1.0",
+  "description": "Drive the getmeajob job-search scripts: source, rank, plan, review answers, dry-run and hold-run applications, queue, status, tracker and resume.",
+  "author": { "name": "getmeajob contributors" },
+  "license": "Apache-2.0",
+  "keywords": ["jobs", "job-search", "applications", "greenhouse", "ashby"]
+}
