@@ -3,7 +3,8 @@
 Order per question: your saved answer (answers.yaml, checked against the options), else
 the first rule that fits. Required questions nobody can answer truthfully become
 unknowns and the plan is `needs_answers`; optional ones are left blank (`skip`).
-Text asking candidates not to use automated tools blocks the plan.
+Text in the form or the job description asking candidates not to use automated tools
+blocks the plan.
 
 A plan is stored in `data/plans/<key>.json` with an `inputs_hash` of everything it
 depends on, so re-running with unchanged inputs reuses it and writes nothing.
@@ -11,11 +12,11 @@ depends on, so re-running with unchanged inputs reuses it and writes nothing.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from getmeajob.files import now_iso, read_jsonl, write_json_atomic
 from getmeajob.http import HttpClient, client_for
@@ -28,7 +29,7 @@ from getmeajob.plan.rules import Rule, load_refusal_patterns, load_rules
 from getmeajob.plan.schema import PageReader, SchemaUnavailable, fetch_schema, form_url, schema_hash
 from getmeajob.sources.registry import ATS_FOR_FORMS
 from getmeajob.store import JobStore, QueueLog, StatusLog
-from getmeajob.textutil import norm_label, short_hash, truncate
+from getmeajob.textutil import norm_label, refusal_in, short_hash, truncate
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import get_path, load_yaml
 
@@ -83,11 +84,10 @@ def _answers_signature(answers: Answers, job: Job) -> str:
     return short_hash(json.dumps(relevant, sort_keys=True, default=str))
 
 
-def _file_sig(path: str | None) -> str:
+def _file_sig(ws: Workspace, path: str | None) -> str:
     if path is None:
         return "-"
-    stat = Path(path).stat()
-    return f"{path}:{stat.st_size}:{stat.st_mtime_ns}"
+    return f"{path}:{hashlib.sha256((ws.root / path).read_bytes()).hexdigest()}"
 
 
 @dataclass
@@ -112,8 +112,9 @@ class PlanInputs:
             self.profile.digest(),
             _answers_signature(self.answers, job),
             _rules_signature(self.rules, self.refusal),
-            _file_sig(resume_path),
+            _file_sig(ws, resume_path),
             [job.company, job.title, job.location, job.remote, job.workplace, job.board],
+            job.description,
         ]
         return short_hash(json.dumps(parts, default=str)), resume_path
 
@@ -131,7 +132,7 @@ def _record(ws: Workspace, plan: Plan, url: str, refused: str = "") -> None:
     queue = QueueLog(ws)
     status = StatusLog(ws)
     if plan.status == PlanStatus.blocked:
-        detail = f'The form asks applicants not to use automated tools: "{refused}"'
+        detail = f'The job asks applicants not to use automated tools: "{refused}"'
         queue.add(plan.job_key, QueueKind.automation_refused, detail, url)
         queue.resolve(plan.job_key, QueueKind.needs_answers, "blocked: the form refuses tools")
         return
@@ -189,7 +190,7 @@ def _plan_job(
         return existing, True
     plan = _base_plan(job, PlanStatus.ready)
     plan.schema_hash, plan.inputs_hash, plan.resume_path = shash, digest, resume_path
-    refused = find_refusal(questions, inputs.refusal)
+    refused = find_refusal(questions, inputs.refusal) or refusal_in(job.description)
     if refused is not None:
         plan.status, plan.blocked_reason = PlanStatus.blocked, "automation_refused"
         plan.unknowns = []

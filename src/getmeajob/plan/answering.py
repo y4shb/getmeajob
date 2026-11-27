@@ -34,7 +34,7 @@ def resume_for(ws: Workspace, profile: Profile, key: str) -> str | None:
     """A tailored `roles/<dir>/resume.pdf` listing this job, else `files.resume`."""
     role = role_for_key(ws, key)
     if role is not None and (role / "resume.pdf").is_file():
-        return str((role / "resume.pdf").resolve())
+        return allowed_file(ws, profile, str(role / "resume.pdf"))[0]
     return allowed_file(ws, profile, profile.text("files.resume"))[0]
 
 
@@ -44,15 +44,18 @@ def _resolve(ws: Workspace, name: str) -> Path:
 
 
 def allowed_file(ws: Workspace, profile: Profile, name: str | None) -> tuple[str | None, str]:
-    """(full path, problem) for a file to attach: it must exist and sit inside the
-    workspace, or be the `files.resume` or `files.cover_letter` of the profile."""
+    """(path, problem) for a file to attach: it must exist and sit inside the workspace
+    (the path is then relative to it, so a moved workspace keeps its plans), or be the
+    `files.resume` or `files.cover_letter` of the profile."""
     if not name:
         return None, "no file was given"
     path = _resolve(ws, name)
     if not path.is_file():
         return None, f"the file {name!r} was not found"
     named = [profile.text("files.resume"), profile.text("files.cover_letter")]
-    if path.is_relative_to(ws.root.resolve()) or path in {_resolve(ws, n) for n in named if n}:
+    if path.is_relative_to(ws.root.resolve()):
+        return path.relative_to(ws.root.resolve()).as_posix(), ""
+    if path in {_resolve(ws, n) for n in named if n}:
         return str(path), ""
     return None, (
         f"the file {name!r} is outside the workspace and is not files.resume or "

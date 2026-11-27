@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from getmeajob.errors import GetmeajobError
-from getmeajob.files import append_jsonl, read_jsonl, write_jsonl_atomic
-from getmeajob.files import now_iso as now_iso
+from getmeajob.files import append_jsonl, now_iso, read_jsonl, write_jsonl_atomic
 from getmeajob.models import (
     FORWARD_ORDER,
     SIDE_STATES,

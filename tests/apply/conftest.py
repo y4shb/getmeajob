@@ -1,8 +1,7 @@
 """Fixtures for the apply tests.
 
 - `ready_ws`: a copy of a demo workspace where both demo jobs have `ready` plans
-  (built once per session with the real CLI: init --demo, source, rank, plan, answer;
-  planned again in the copy, so the plans match the copied files).
+  (built once per session with the real CLI: init --demo, source, rank, plan, answer).
 - `use_forms(ws, greenhouse="captcha=1")`: point the demo form URLs at the local mock
   forms with a query-string variant.
 - `set_apply(ws, **values)`: change the `apply:` block of preferences.yaml.
@@ -62,7 +61,6 @@ def _template(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def ready_ws(_template: Path, tmp_path: Path) -> Workspace:
     root = tmp_path / "ws"
     shutil.copytree(_template, root)
-    assert main(["--home", str(root), "--quiet", "plan"]) == 0
     return Workspace(root)
 
 

@@ -9,7 +9,7 @@ import pytest
 
 from getmeajob.demo import examples_dir
 from getmeajob.files import write_jsonl_atomic
-from getmeajob.models import AppStatus, Job, PlanStatus, QueueKind
+from getmeajob.models import AppStatus, Job, Plan, PlanStatus, QueueKind
 from getmeajob.plan.overrides import merge_answers
 from getmeajob.plan.planner import load_plan, plan_run
 from getmeajob.store import JobStore, QueueLog, StatusLog
@@ -44,7 +44,7 @@ def test_demo_plan_needs_answers_then_ready_after_answer(planned_ws: Workspace) 
     assert answers["cover_letter"].source == "skip"
     assert answers["question_2006[]"].source == "skip"
     assert answers["resume"].source == "file" and str(answers["resume"].value).endswith("base.pdf")
-    assert gh.resume_path and Path(gh.resume_path).is_file()
+    assert gh.resume_path == "resume/base.pdf"  # relative, so moving the workspace is fine
     ashby = plans[ASHBY]
     assert ashby.status == PlanStatus.ready
     arrangement = {a.question_id: a for a in ashby.answers}["c0ffee00-0000-4000-8000-0000000000a5"]
@@ -96,6 +96,24 @@ def test_blocked_on_automation_refusal(
     assert [i.kind for i in items] == [QueueKind.automation_refused]
     assert "automated tools" in items[0].detail
     assert StatusLog(planned_ws).current(key) is None
+
+
+def test_job_text_refusing_tools_blocks_the_plan(
+    planned_ws: Workspace, make_job: Callable[..., Job]
+) -> None:
+    def plan_with(text: str) -> Plan:
+        job = make_job(GH, "Example Corp", "Senior Backend Engineer", "Remote - Worldwide")
+        job.description = text
+        JobStore(planned_ws).upsert([job], "2026-11-27T00:00:00Z")
+        return plan_run(planned_ws, [GH]).plans[0]
+
+    harmless = "We never use automated tools to screen candidates. A person reads each one."
+    assert plan_with(harmless).status == PlanStatus.needs_answers
+    refusal = "Please do not use AI tools or automated tools to apply for this role."
+    plan = plan_with(f"{harmless}\n{refusal}")
+    assert (plan.status, plan.blocked_reason) == (PlanStatus.blocked, "automation_refused")
+    (item,) = [i for i in QueueLog(planned_ws).open_items() if i.job_key == GH]
+    assert item.kind == QueueKind.automation_refused and f'"{refusal}"' in item.detail
 
 
 def test_queue_item_added_and_resolved(planned_ws: Workspace) -> None:
@@ -156,7 +174,7 @@ def test_role_resume_wins_and_missing_resume_is_unknown(planned_ws: Workspace) -
     (role / "meta.yaml").write_text(f"job_keys: ['{GH}']\n", encoding="utf-8")
     (role / "resume.pdf").write_bytes(b"%PDF-1.4 synthetic")
     plan = plan_run(planned_ws, [GH]).plans[0]
-    assert plan.resume_path == str((role / "resume.pdf").resolve())
+    assert plan.resume_path == "roles/example-corp-senior-backend-engineer/resume.pdf"
     (role / "resume.pdf").unlink()
     (planned_ws.root / "resume" / "base.pdf").unlink()
     plan = plan_run(planned_ws, [GH]).plans[0]

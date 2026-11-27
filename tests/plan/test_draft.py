@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import sys
 import types
+from collections.abc import Callable
 from typing import Any
 
 import pytest
 
 from getmeajob.errors import GetmeajobError
 from getmeajob.files import write_json_atomic
-from getmeajob.models import Plan, PlanStatus, QuestionType, UnknownQuestion
+from getmeajob.models import Job, Plan, PlanStatus, QuestionType, UnknownQuestion
 from getmeajob.plan.draft import (
     ASK_HUMAN,
+    DEFAULT_BUDGET,
     AnthropicProvider,
     CommandProvider,
     DraftResult,
@@ -21,6 +23,7 @@ from getmeajob.plan.draft import (
 )
 from getmeajob.plan.overrides import approve_job, load_answers, merge_answers
 from getmeajob.plan.planner import plan_run
+from getmeajob.store import JobStore
 from getmeajob.workspace import Workspace
 
 GH = "greenhouse:examplecorp:1001"
@@ -32,12 +35,13 @@ class FakeProvider:
     ) -> None:
         self.reply = reply
         self.stop = stop
+        self.usage = (300, 60)
         self.prompts: list[str] = []
         self.cache_id = "fake"
 
     def complete(self, prompt: str, max_tokens: int) -> DraftResult:
         self.prompts.append(prompt)
-        return DraftResult(self.reply, 300, 60, self.stop)
+        return DraftResult(self.reply, *self.usage, self.stop)
 
 
 def _u(qid: str, label: str, qtype: QuestionType = QuestionType.textarea) -> UnknownQuestion:
@@ -74,6 +78,24 @@ def test_budget_stops_calls(demo_ws: Workspace) -> None:
     assert report.stopped_at_budget
     assert [s["reason"] for s in report.skipped] == ["token budget reached"]
     assert report.tokens_used == 360
+
+
+def test_default_budget_fits_a_normal_run(demo_ws: Workspace, make_job: Callable[..., Job]) -> None:
+    job = make_job(GH, "Example Corp", "Senior Backend Engineer", "Remote - Worldwide")
+    job.description = "We build payment services in Python and run them on Kubernetes. " * 40
+    JobStore(demo_ws).upsert([job], "2026-11-27T00:00:00Z")
+    labels = [
+        "Why do you want to join Example Corp?",
+        "What would you build first in this role?",
+        "Tell us about your proudest project",
+        "Describe a hard bug you fixed",
+        "What do you hope to learn here?",
+    ]
+    _plan_with(demo_ws, GH, [_u(str(i), label) for i, label in enumerate(labels)])
+    fake = FakeProvider()
+    fake.usage = (0, 0)  # unknown usage counts as the whole estimate, reply reserve included
+    report = draft_unknowns(demo_ws, fake, budget_tokens=DEFAULT_BUDGET)
+    assert report.calls == 5 and not report.stopped_at_budget
 
 
 def test_cache_hit_no_call(demo_ws: Workspace) -> None:

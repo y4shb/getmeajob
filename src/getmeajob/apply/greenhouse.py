@@ -113,7 +113,7 @@ class GreenhouseFiller:
         value = answer.value
         if answer.type == QuestionType.file:
             path, problem = allowed_file(ws, profile, str(value))
-            return upload_file(page, _sel(qid), path) if path else problem
+            return upload_file(page, _sel(qid), ws.root / path) if path else problem
         if answer.type == QuestionType.multiselect:
             return self._multi(page, qid, value, options.get(qid, []))
         if isinstance(value, list):

@@ -75,7 +75,7 @@ class TrackerRow:
 
 
 def _relative(path_text: str, root: Path) -> str:
-    path = Path(path_text)
+    path = root / path_text
     try:
         return path.resolve().relative_to(root.resolve()).as_posix()
     except (ValueError, OSError):

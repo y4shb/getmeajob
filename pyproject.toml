@@ -37,7 +37,7 @@ Issues = "https://github.com/y4shb/getmeajob/issues"
 browser = ["playwright>=1.45"]
 llm = ["anthropic>=2.14"]
 mcp = ["mcp>=2"]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "types-PyYAML"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "types-PyYAML", "hatchling>=1.25"]
 all = ["getmeajob[browser,llm,mcp]"]
 
 [project.scripts]

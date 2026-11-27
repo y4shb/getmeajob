@@ -11,8 +11,9 @@ import pytest
 
 from getmeajob.apply.runner import run_apply
 from getmeajob.errors import GetmeajobError
+from getmeajob.files import now_iso
 from getmeajob.models import ApplyMode, ApplyStatus, AppStatus, LedgerEntry, QueueKind
-from getmeajob.store import JobStore, Ledger, QueueLog, StatusLog, now_iso
+from getmeajob.store import JobStore, Ledger, QueueLog, StatusLog
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import dump_yaml, load_yaml
 
@@ -144,6 +145,13 @@ def test_missing_plan_is_reported(ready_ws: Workspace) -> None:
 
 
 # ------------------------------------------------------------------- browser
+
+
+@browser
+def test_plans_stay_current_when_the_workspace_moves(ready_ws: Workspace) -> None:
+    moved = Workspace(ready_ws.root.rename(ready_ws.root.parent / "renamed"))
+    entries = _run(moved, [GH, ASHBY], ApplyMode.dry)  # a copy of the planned template, moved
+    assert [e.status for e in entries] == [ApplyStatus.dry_ok] * 2, entries[0].detail
 
 
 @browser

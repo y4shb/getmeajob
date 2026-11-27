@@ -170,7 +170,7 @@
       src: 'recaptcha/api2/bframe.html?hl=en&k=demo', width: '400', height: '300' }));
   }
   if (params.get('noauto') === '1') {
-    form.prepend(el('p', { class: 'notice' }, 'Do not use AI agents or automated tools to fill in this form. We read every application ourselves.'));
+    slot.append(el('p', { class: 'notice' }, 'Do not use AI agents or automated tools to fill in this form. We read every application ourselves.'));
   }
   if (params.get('untyped') === '1') {
     form.querySelectorAll('button:not([type=submit])').forEach((b) => b.removeAttribute('type'));

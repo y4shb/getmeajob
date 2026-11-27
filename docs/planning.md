@@ -26,7 +26,7 @@ Plan status is one of:
 
 - `ready`: every required question has an answer.
 - `needs_answers`: some required questions are unknown.
-- `blocked`: the form asks applicants not to use automated tools (reason `automation_refused`).
+- `blocked`: the form or the job description asks applicants not to use automated tools (reason `automation_refused`).
 - `schema_unavailable`: the form questions could not be read. The reason is stored with the plan.
 
 ## Truthfulness rules
@@ -36,7 +36,7 @@ These hold for every plan and each has a test.
 - A missing profile field gives an unknown, never a guess.
 - Choice questions never fall back to the first option. If two options both fit ("Yes, I will require sponsorship" and "Yes, I have sponsorship"), the matcher refuses and says why.
 - A near match never flips the meaning: "I am a protected veteran" never picks "I am not a protected veteran".
-- Questions about AI or automated tools are never answered by a rule. Text in a label or description telling candidates not to use bots, automated tools or AI agents blocks the plan.
+- Questions about AI or automated tools are never answered by a rule. Text in a label or description telling candidates not to use bots, automated tools or AI agents blocks the plan. So does a job description that tells applicants not to use AI or automated tools to apply; the queue item quotes the sentence.
 - Consent boxes are ticked only when `consent.privacy_notice: true` is in your profile.
 - Voluntary self-ID questions (gender, race, veteran, disability) use your profile value if you set one, otherwise the "decline" option. Without a decline option, a required one becomes unknown and an optional one is left blank.
 
@@ -103,7 +103,7 @@ The full list of kinds is `KINDS` in `src/getmeajob/plan/rules.py`. A bad patter
 - Every draft is saved under `by_job` with `needs_review: true`. Read it, edit `answers.yaml` if needed, then run `getmeajob plan approve KEY`. Submitting refuses jobs with unreviewed drafts.
 - A reply cut off at the token limit is not saved; the question stays open for you.
 - Answers an agent saves through the MCP server are marked `needs_review: true` and `source: agent` too. `getmeajob plan approve --all` approves every waiting answer, in every section of `answers.yaml`.
-- `--budget N` caps the estimated tokens (characters divided by 4). Replies are cached in `cache/llm/`, so running it again costs nothing.
+- `--budget N` caps the estimated tokens: characters divided by 4, plus 1024 kept for each reply. The default, 10000, fits about five drafts. Replies are cached in `cache/llm/`, so running it again costs nothing.
 
 Providers:
 

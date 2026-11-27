@@ -17,13 +17,14 @@ from getmeajob.apply.forms import form_target, is_local
 from getmeajob.apply.guards import PageScan, captcha_in, email_code_in, hard_stop, scan_page
 from getmeajob.apply.record import Outcome, make_entry, new_run_id, write_attempt
 from getmeajob.errors import GetmeajobError
+from getmeajob.files import now_iso
 from getmeajob.models import ApplyMode, ApplyStatus, LedgerEntry, Plan
 from getmeajob.plan.planner import PlanInputs, plan_is_current
 from getmeajob.plan.plans import all_plans, load_plan
 from getmeajob.plan.profile import Profile
 from getmeajob.settings import Settings, load_settings
 from getmeajob.sources.registry import ATS_FOR_FORMS
-from getmeajob.store import JobStore, Ledger, StatusLog, now_iso
+from getmeajob.store import JobStore, Ledger, StatusLog
 from getmeajob.workspace import Workspace, key_to_filename
 
 if TYPE_CHECKING:

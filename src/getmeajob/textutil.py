@@ -1,4 +1,4 @@
-"""Small text helpers: HTML to text, label normalising, slugs, hashes."""
+"""Small text helpers: HTML to text, label normalising, slugs, hashes, refusal notices."""
 
 from __future__ import annotations
 
@@ -64,6 +64,16 @@ _SPACES = re.compile(r"[ \t\f\v]+")
 _MANY_NEWLINES = re.compile(r"\n{3,}")
 _WS = re.compile(r"\s+")
 _LABEL_MARKERS = re.compile(r"\((?:required|optional)\)")
+_TOOLS = r"(ai|automated|automation|bots?|scripts?)"
+# Wording aimed at the applicant, so "We never use automated tools to screen" is not one.
+_REFUSAL = re.compile(
+    r"(?<!\bwe )\b(do not|don['’]?t|must not|may not|should not) use\b"
+    rf"[^.!?\n]{{0,60}}?\b{_TOOLS}\b"
+    r"(?:(?!\bto\b)[^.!?\n]){0,60}\bto (apply|complete|fill|submit)\b|"
+    rf"\bapplications? (submitted|completed|filled( in| out)?) (using|with|by) (an? )?{_TOOLS}\b"
+    r"[^.!?\n]{0,40}?\bwill be (rejected|disqualified|removed|discarded)\b",
+    re.I,
+)
 
 
 class _TextExtractor(HTMLParser):
@@ -191,3 +201,17 @@ def short_hash(text: str, n: int = 10) -> str:
 def options_hash(labels: Iterable[str]) -> str:
     """Order-independent hash of a list of option labels (normalised first)."""
     return short_hash("\n".join(sorted(norm_label(label) for label in labels)))
+
+
+def sentence_at(text: str, match: re.Match[str]) -> str:
+    """The sentence holding a match, on one line, at most 200 characters."""
+    start = max(text.rfind(".", 0, match.start()), text.rfind("\n", 0, match.start())) + 1
+    stops = [i for i in (text.find(".", match.end()), text.find("\n", match.end())) if i != -1]
+    end = min(stops) + 1 if stops else len(text)
+    return truncate(" ".join(text[start:end].split()), 200)
+
+
+def refusal_in(text: str) -> str | None:
+    """The sentence asking applicants not to use automated tools, or None."""
+    match = _REFUSAL.search(text)
+    return sentence_at(text, match) if match else None

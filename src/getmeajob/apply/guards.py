@@ -2,9 +2,10 @@
 
 One script collects what matters (visible text, iframes, password and code inputs,
 error messages) and small functions read it: CAPTCHA or bot check, account wall,
-"do not use automated tools", success, emailed-code step, validation errors. Bot check,
-account wall and refusal texts count only inside a visible form, so a job description
-that mentions bots does not stop a run; bot check frames and titles count anywhere.
+"do not use automated tools", success, emailed-code step, validation errors. Bot check
+and account wall texts count only inside a visible form, so a job description that
+mentions bots does not stop a run; bot check frames and titles, and notices asking
+applicants not to use automated tools, count anywhere on the page.
 
 These only read the page. They never click, type or try to get past anything.
 """
@@ -16,6 +17,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from getmeajob.apply.scripts import page_script
+from getmeajob.textutil import refusal_in, sentence_at
 
 if TYPE_CHECKING:
     from playwright.sync_api import Page
@@ -40,18 +42,6 @@ _ACCOUNT_TEXT = re.compile(
     r"you (must|need to) (sign|log) ?in|(sign|log) ?in or create an account|"
     r"create (a|your) candidate account",
     re.I,
-)
-_STOP = r"(do not|don'?t|must not|may not|should not|cannot|can'?t|never|refrain from|"
-_STOP += r"not (?:allowed|permitted) to|(?:is|are) prohibited from|please avoid)"
-_BOTS = r"(automated|automation|bots?|scripts?|ai agents?|ai tools?|ai assistants?|autofill|"
-_BOTS += r"auto-fill|crawlers?|scrapers?)"
-_REFUSAL = (
-    re.compile(rf"\b{_STOP}\b[^.!?\n]{{0,60}}\b{_BOTS}\b", re.I),
-    re.compile(
-        rf"\b{_BOTS}\b[^.!?\n]{{0,80}}\b(will be|are|is) (rejected|disqualified|discarded|"
-        r"not (accepted|considered|allowed|permitted)|prohibited)",
-        re.I,
-    ),
 )
 _SUCCESS_URL = re.compile(r"/confirmation|/thank|application[-_]?submitted", re.I)
 _SUCCESS_TEXT = re.compile(
@@ -94,13 +84,6 @@ def scan_page(page: Page) -> PageScan:
     )
 
 
-def _sentence(text: str, match: re.Match[str]) -> str:
-    start = max(text.rfind(".", 0, match.start()), text.rfind("\n", 0, match.start())) + 1
-    stops = [i for i in (text.find(".", match.end()), text.find("\n", match.end())) if i != -1]
-    end = min(stops) + 1 if stops else len(text)
-    return " ".join(text[start:end].split())[:200]
-
-
 def captcha_in(scan: PageScan) -> str | None:
     for frame in scan.frames:
         src = str(frame.get("src") or "")
@@ -113,22 +96,14 @@ def captcha_in(scan: PageScan) -> str | None:
     if scan.title.strip().casefold().startswith("just a moment"):
         return "a browser check page"
     match = _CAPTCHA_TEXT.search(scan.form)
-    return f"the page says: {_sentence(scan.form, match)}" if match else None
+    return f"the page says: {sentence_at(scan.form, match)}" if match else None
 
 
 def account_wall_in(scan: PageScan) -> str | None:
     match = _ACCOUNT_TEXT.search(scan.form)
     if match:
-        return f"the page says: {_sentence(scan.form, match)}"
+        return f"the page says: {sentence_at(scan.form, match)}"
     return "a password field" if scan.password else None
-
-
-def refusal_in(text: str) -> str | None:
-    for pattern in _REFUSAL:
-        match = pattern.search(text)
-        if match:
-            return _sentence(text, match)
-    return None
 
 
 def success_in(scan: PageScan) -> bool:
@@ -144,7 +119,7 @@ def hard_stop(scan: PageScan) -> tuple[str, str] | None:
     for status, check in (
         ("captcha", captcha_in),
         ("account_required", account_wall_in),
-        ("automation_refused", lambda s: refusal_in(s.form)),
+        ("automation_refused", lambda s: refusal_in(s.body)),
     ):
         seen = check(scan)
         if seen:

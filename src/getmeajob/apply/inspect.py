@@ -15,10 +15,11 @@ from typing import Any
 
 from getmeajob.apply.browser import BrowserSession, require_playwright
 from getmeajob.apply.forms import form_target
-from getmeajob.apply.guards import account_wall_in, captcha_in, refusal_in, scan_page
+from getmeajob.apply.guards import account_wall_in, captcha_in, scan_page
 from getmeajob.apply.scripts import page_script
 from getmeajob.errors import GetmeajobError
 from getmeajob.settings import Settings
+from getmeajob.textutil import refusal_in
 
 MAX_MENUS = 40
 
@@ -108,7 +109,7 @@ def inspect_form(url: str, settings: Settings, *, timeout_ms: int = 30_000) -> I
                 for name, seen in (
                     ("bot check", captcha_in(scan)),
                     ("account wall", account_wall_in(scan)),
-                    ("asks for no automated tools", refusal_in(scan.form)),
+                    ("asks for no automated tools", refusal_in(scan.body)),
                 )
                 if seen
             ]

@@ -56,7 +56,7 @@ With `submit_boards: []`, `getmeajob apply --mode submit` stops with a message a
 
 ## Hard stops
 
-getmeajob stops on these, takes a screenshot, and adds a task to `getmeajob queue`. It never tries to get past them, and it does not try that job again in a later run. Words on the page count only inside the form, so a job description that mentions bots does not stop a run.
+getmeajob stops on these, takes a screenshot, and adds a task to `getmeajob queue`. It never tries to get past them, and it does not try that job again in a later run. Bot check and account wall wording counts only inside the form, so a job description that mentions bots does not stop a run. A notice asking applicants not to use automated tools counts anywhere on the page.
 
 - A bot check or CAPTCHA: getmeajob never solves one. Apply by hand if you still want the job.
 - An account wall (a password field, or "create an account to apply"): getmeajob never creates accounts.

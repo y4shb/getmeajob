@@ -1,0 +1,7 @@
+# Synthetic answers to the two open demo questions, for scripts/quickstart.sh.
+# Alex Example needs sponsorship only for the United States. The Example Corp job is
+# remote worldwide, so working from Canada needs none: the true answer is "No".
+by_company:
+  examplecorp:
+    "Why do you want to join Example Corp?": "I like building backend services in Python, and this role fits my four years of backend work."
+    "Will you now or in the future require sponsorship for employment visa status?": "No"

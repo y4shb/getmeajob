@@ -76,12 +76,32 @@ def test_account_variant_stops(
     assert item.kind == QueueKind.account_required and "never creates accounts" in item.detail
 
 
-def test_noauto_variant_stops(
-    ready_ws: Workspace, use_forms: Callable[..., None], monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("mode", [ApplyMode.dry, ApplyMode.hold, ApplyMode.submit])
+def test_notice_above_the_form_stops_every_mode(
+    ready_ws: Workspace,
+    use_forms: Callable[..., None],
+    set_apply: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    mode: ApplyMode,
 ) -> None:
+    from getmeajob.apply.runner import run_apply
+
+    def human(*args: Any) -> ApplyStatus:
+        raise AssertionError("a form behind a hard stop was handed to the human")
+
     use_forms(ready_ws, greenhouse="noauto=1", ashby="noauto=1")
+    set_apply(ready_ws, submit_boards=["greenhouse", "ashby"])
     _no_filling(monkeypatch)
-    entries = _dry(ready_ws, [GH, ASHBY])
+    entries = run_apply(
+        ready_ws,
+        [GH, ASHBY],
+        mode=mode,
+        headed=False,
+        click_submit=False,
+        hold_timeout=900,
+        limit=None,
+        wait_for_human=human,
+    )
     assert [e.status for e in entries] == [ApplyStatus.automation_refused] * 2
     assert "automated tools" in entries[0].detail and "AI agents" in entries[1].detail
     kinds = {i.kind for i in QueueLog(ready_ws).open_items()}
@@ -107,6 +127,12 @@ def test_job_text_about_bots_is_not_a_stop(open_mock: Callable[..., Any]) -> Non
         assert phrase in scan.body and phrase not in scan.form
     assert guards.hard_stop(scan) is None
     assert guards.hard_stop(guards.PageScan(form=scan.body)) is not None  # the old way stopped
+    scan = guards.scan_page(open_mock("greenhouse", "noauto=1"))
+    assert "do not use automated tools" in scan.body and "automated tools" not in scan.form
+    assert guards.hard_stop(scan) == (
+        "automation_refused",
+        "Please do not use automated tools, bots or AI agents to complete this application.",
+    )
 
 
 def test_errors_success_and_code_are_read(open_mock: Callable[..., Any]) -> None:

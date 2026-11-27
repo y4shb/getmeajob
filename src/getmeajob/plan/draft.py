@@ -28,6 +28,7 @@ from getmeajob.workspace import Workspace
 COMMAND_ENV = "GETMEAJOB_LLM_COMMAND"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 MAX_TOKENS = 1024
+DEFAULT_BUDGET = 10_000
 ASK_HUMAN = "ASK_HUMAN"
 DRAFT_TYPES = frozenset({QuestionType.text, QuestionType.textarea})
 FACTUAL = re.compile(

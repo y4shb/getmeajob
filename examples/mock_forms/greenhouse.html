@@ -298,7 +298,7 @@
       src: 'recaptcha/api2/bframe.html?hl=en&k=demo', width: '400', height: '300' }));
   }
   if (params.get('noauto') === '1') {
-    form.prepend(el('p', { class: 'notice' }, 'Please do not use automated tools, bots or AI agents to complete this application. ' +
+    slot.append(el('p', { class: 'notice' }, 'Please do not use automated tools, bots or AI agents to complete this application. ' +
       'Applications filled in by automated tools will be rejected.'));
   }
   if (params.get('untyped') === '1') {

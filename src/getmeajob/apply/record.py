@@ -15,8 +15,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from getmeajob.files import now_iso
 from getmeajob.models import ApplyMode, ApplyStatus, AppStatus, LedgerEntry, Plan, QueueKind
-from getmeajob.store import Ledger, QueueLog, StatusLog, now_iso
+from getmeajob.store import Ledger, QueueLog, StatusLog
 from getmeajob.workspace import Workspace
 
 REDACTED = "[answer]"

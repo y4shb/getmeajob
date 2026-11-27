@@ -85,7 +85,7 @@ class AshbyFiller:
                 report.add(
                     answer.question_id,
                     answer.label,
-                    upload_file(page, _sel(answer.question_id), path),
+                    upload_file(page, _sel(answer.question_id), ws.root / path),
                 )
             else:
                 report.add(answer.question_id, answer.label, problem)

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 from getmeajob.errors import GetmeajobError
 from getmeajob.models import Plan, PlanStatus
-from getmeajob.plan.draft import draft_unknowns, provider_named
+from getmeajob.plan.draft import DEFAULT_BUDGET, draft_unknowns, provider_named
 from getmeajob.plan.overrides import SECTIONS, approve_job, merge_answers
 from getmeajob.plan.planner import load_plan, plan_run
 from getmeajob.plan.unknowns import collect_unknowns, review_table, write_stub
@@ -286,9 +286,9 @@ def register(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     parser.add_argument(
         "--budget",
         type=int,
-        default=4000,
+        default=DEFAULT_BUDGET,
         metavar="N",
-        help="plan draft: token budget (estimate), default 4000",
+        help=f"plan draft: token budget (estimate), default {DEFAULT_BUDGET}",
     )
     parser.add_argument(
         "--provider",
