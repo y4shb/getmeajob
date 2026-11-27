@@ -1,0 +1,59 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "5a1e0000-0000-4000-8000-000000000001",
+      "title": "Platform Engineer",
+      "department": "Engineering",
+      "team": "Platform",
+      "employmentType": "FullTime",
+      "location": "Springfield, Ontario, Canada",
+      "secondaryLocations": [],
+      "publishedAt": "2026-11-12T14:00:00.000+00:00",
+      "isListed": true,
+      "isRemote": false,
+      "workplaceType": "Hybrid",
+      "address": {
+        "postalAddress": {
+          "addressLocality": "Springfield",
+          "addressRegion": "Ontario",
+          "addressCountry": "Canada"
+        }
+      },
+      "jobUrl": "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000001",
+      "applyUrl": "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000001/application",
+      "descriptionHtml": "<p>Sample Systems is a made-up company for the getmeajob demo. Our platform team keeps the lights on for every product team.</p><h3>What you will do</h3><ul><li>Run our Kubernetes clusters on AWS</li><li>Manage infrastructure as code with Terraform</li><li>Improve deploys, alerts and on-call</li></ul><h3>What we look for</h3><ul><li>2+ years of experience operating production systems</li><li>Hands-on Kubernetes, AWS and Terraform</li></ul><p>This is a hybrid role with three days a week in our Springfield office.</p>",
+      "descriptionPlain": "Sample Systems is a made-up company for the getmeajob demo. Our platform team keeps the lights on for every product team.\n\nWhat you will do\n- Run our Kubernetes clusters on AWS\n- Manage infrastructure as code with Terraform\n- Improve deploys, alerts and on-call\n\nWhat we look for\n- 2+ years of experience operating production systems\n- Hands-on Kubernetes, AWS and Terraform\n\nThis is a hybrid role with three days a week in our Springfield office.",
+      "compensation": {
+        "compensationTierSummary": "CA$110K - CA$135K",
+        "scrapeableCompensationSalarySummary": "CA$110K - CA$135K",
+        "compensationTiers": [],
+        "summaryComponents": []
+      }
+    },
+    {
+      "id": "5a1e0000-0000-4000-8000-000000000002",
+      "title": "Data Analyst",
+      "department": "Finance",
+      "team": "Analytics",
+      "employmentType": "FullTime",
+      "location": "Canada",
+      "secondaryLocations": [],
+      "publishedAt": "2026-11-14T14:00:00.000+00:00",
+      "isListed": true,
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "address": {"postalAddress": {"addressCountry": "Canada"}},
+      "jobUrl": "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000002",
+      "applyUrl": "https://jobs.ashbyhq.com/samplesystems/5a1e0000-0000-4000-8000-000000000002/application",
+      "descriptionHtml": "<p>Sample Systems is a made-up company for the getmeajob demo. Our analytics team turns sales and support data into weekly reports for the leadership team.</p><ul><li>2+ years of experience with SQL and dashboards</li><li>Comfort presenting numbers to people who are not analysts</li><li>Spreadsheet skills that make finance people smile</li></ul><p>Remote within Canada.</p>",
+      "descriptionPlain": "Sample Systems is a made-up company for the getmeajob demo. Our analytics team turns sales and support data into weekly reports for the leadership team.\n\n- 2+ years of experience with SQL and dashboards\n- Comfort presenting numbers to people who are not analysts\n- Spreadsheet skills that make finance people smile\n\nRemote within Canada.",
+      "compensation": {
+        "compensationTierSummary": "CA$75K - CA$90K",
+        "scrapeableCompensationSalarySummary": "CA$75K - CA$90K",
+        "compensationTiers": [],
+        "summaryComponents": []
+      }
+    }
+  ]
+}

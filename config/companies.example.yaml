@@ -1,5 +1,8 @@
 # Companies to watch. getmeajob reads each company's public job board.
-# `getmeajob discover FILE --write` can find the ats and slug for you from names or URLs.
+#
+# Easiest way to fill this file: put company names or job board URLs in a text file,
+# one per line, then run `getmeajob discover FILE --write`. Already use a career-ops
+# style portals.yml? Run `getmeajob import-portals portals.yml --write`.
 #
 # Each entry has these fields (only name, ats and slug are needed):
 #   - name: Example Corp          # the company name
@@ -7,8 +10,22 @@
 #     slug: examplecorp           # the board name in the job board URL
 #     enabled: true               # false skips it without deleting it
 #     careers_url:                # the company's careers page, if you know it
-#     region:                     # lever only: "eu" for boards on the EU host
-#     verified: true              # false when the board name did not match the company
+#     region:                     # lever only: "eu" for boards on jobs.eu.lever.co
+#     verified: true              # false when discovery could not confirm the board's name
 #     notes:                      # anything you want to remember
+#
+# Where to find the slug:
+#   greenhouse       https://job-boards.greenhouse.io/<slug>
+#   ashby            https://jobs.ashbyhq.com/<slug>
+#   lever            https://jobs.lever.co/<slug>
+#   smartrecruiters  https://jobs.smartrecruiters.com/<slug>
+#   workable         https://apply.workable.com/<slug>
+#   recruitee        https://<slug>.recruitee.com
+#
+# Example (remove the # signs to use it):
+# companies:
+#   - name: Example Corp
+#     ats: greenhouse
+#     slug: examplecorp
 
 companies: []

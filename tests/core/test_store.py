@@ -200,3 +200,12 @@ def test_json_atomic_roundtrip(tmp_ws: Workspace) -> None:
     path.write_text("{", encoding="utf-8")
     with pytest.raises(StoreError):
         read_json(path)
+
+
+def test_source_reopens_closed_posting(tmp_ws: Workspace) -> None:
+    log = StatusLog(tmp_ws)
+    assert log.record("greenhouse:examplecorp:1", AppStatus.discovered, "source")
+    assert log.record("greenhouse:examplecorp:1", AppStatus.closed, "source")
+    assert not log.record("greenhouse:examplecorp:1", AppStatus.discovered, "rank")
+    assert log.record("greenhouse:examplecorp:1", AppStatus.discovered, "source")
+    assert log.current("greenhouse:examplecorp:1") == AppStatus.discovered

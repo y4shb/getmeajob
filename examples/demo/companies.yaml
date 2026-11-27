@@ -1,5 +1,6 @@
 # Demo companies. All four are made up; their boards are replayed from
 # examples/fixtures, so the demo never uses the network.
+# There is one board each on Greenhouse, Ashby, Lever and SmartRecruiters.
 
 companies:
   - name: Example Corp

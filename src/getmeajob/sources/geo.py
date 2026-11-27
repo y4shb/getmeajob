@@ -1,0 +1,76 @@
+"""Country names for the two-letter codes some boards send instead of names."""
+
+from __future__ import annotations
+
+COUNTRIES = {
+    "ae": "United Arab Emirates",
+    "ar": "Argentina",
+    "at": "Austria",
+    "au": "Australia",
+    "be": "Belgium",
+    "bg": "Bulgaria",
+    "br": "Brazil",
+    "ca": "Canada",
+    "ch": "Switzerland",
+    "cl": "Chile",
+    "cn": "China",
+    "co": "Colombia",
+    "cz": "Czechia",
+    "de": "Germany",
+    "dk": "Denmark",
+    "ee": "Estonia",
+    "eg": "Egypt",
+    "es": "Spain",
+    "fi": "Finland",
+    "fr": "France",
+    "gb": "United Kingdom",
+    "gr": "Greece",
+    "hk": "Hong Kong",
+    "hr": "Croatia",
+    "hu": "Hungary",
+    "id": "Indonesia",
+    "ie": "Ireland",
+    "il": "Israel",
+    "in": "India",
+    "it": "Italy",
+    "jp": "Japan",
+    "ke": "Kenya",
+    "kr": "South Korea",
+    "lt": "Lithuania",
+    "lu": "Luxembourg",
+    "lv": "Latvia",
+    "mx": "Mexico",
+    "my": "Malaysia",
+    "ng": "Nigeria",
+    "nl": "Netherlands",
+    "no": "Norway",
+    "nz": "New Zealand",
+    "pe": "Peru",
+    "ph": "Philippines",
+    "pk": "Pakistan",
+    "pl": "Poland",
+    "pt": "Portugal",
+    "ro": "Romania",
+    "rs": "Serbia",
+    "se": "Sweden",
+    "sg": "Singapore",
+    "si": "Slovenia",
+    "sk": "Slovakia",
+    "th": "Thailand",
+    "tr": "Turkey",
+    "tw": "Taiwan",
+    "ua": "Ukraine",
+    "uk": "United Kingdom",
+    "us": "United States",
+    "uy": "Uruguay",
+    "vn": "Vietnam",
+    "za": "South Africa",
+}
+
+
+def country_name(value: str) -> str:
+    """The country name for a two-letter code; anything else is returned as given."""
+    text = value.strip()
+    if len(text) == 2 and text.isalpha():
+        return COUNTRIES.get(text.casefold(), text.upper())
+    return text

@@ -1,0 +1,25 @@
+{
+  "offers": [
+    {
+      "id": 4101,
+      "slug": "backend-engineer",
+      "title": "Backend Engineer",
+      "status": "published",
+      "location": "Springfield, Ontario, Canada",
+      "city": "Springfield",
+      "country": "Canada",
+      "country_code": "CA",
+      "remote": false,
+      "hybrid": true,
+      "published_at": "2026-11-11 09:30:00 UTC",
+      "careers_url": "https://sampleshop.recruitee.com/o/backend-engineer",
+      "careers_apply_url": "https://sampleshop.recruitee.com/o/backend-engineer/c/new",
+      "company_name": "Sample Shop",
+      "department": "Engineering",
+      "description": "<p>Build the shop backend.</p>",
+      "requirements": "<ul><li>3+ years with Python</li></ul>"
+    },
+    {"id": 4102, "title": "Old Role", "status": "closed", "location": "Remote"},
+    {"id": 4103, "title": "Remote Designer", "status": null, "location": "", "country": "Canada", "remote": true}
+  ]
+}

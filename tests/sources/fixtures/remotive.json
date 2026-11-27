@@ -1,0 +1,18 @@
+{
+  "0-legal-notice": "Synthetic notice for the getmeajob tests: link back to the job page and name the site as the source.",
+  "job-count": 1,
+  "jobs": [
+    {
+      "id": 7001,
+      "url": "https://remotive.com/remote-jobs/software-dev/backend-engineer-7001",
+      "title": "Backend Engineer",
+      "company_name": "Sample Distributed Inc",
+      "category": "Software Development",
+      "job_type": "full_time",
+      "publication_date": "2026-11-13T10:00:00",
+      "candidate_required_location": "Canada",
+      "salary": "$100k - $130k",
+      "description": "<p>We use <b>Python</b>. Apply: https://boards.greenhouse.io/sampledistributed/jobs/42</p>"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "jobs": [
+    {"id": null, "title": "No Id At All", "absolute_url": "https://job-boards.greenhouse.io/messyco/jobs/0"},
+    {"id": "None", "title": "Id Is The Word None", "absolute_url": "https://job-boards.greenhouse.io/messyco/jobs/1"},
+    {"id": "null", "title": "Id Is The Word null", "absolute_url": "https://job-boards.greenhouse.io/messyco/jobs/2"},
+    {"id": "", "title": "Id Is Empty", "absolute_url": "https://job-boards.greenhouse.io/messyco/jobs/3"},
+    "not a job record",
+    {"id": 2001, "title": "  ​Site Reliability   Engineer‍ ", "location": ["Remote - Canada", "Springfield, Ontario"], "absolute_url": "https://job-boards.greenhouse.io/messyco/jobs/2001", "first_published": "2026-11-01T09:00:00Z", "content": "&lt;p&gt;Keep things up&amp;nbsp;&amp;amp; running.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;3+ years on call&lt;/li&gt;&lt;/ul&gt;"},
+    {"id": 2002.0, "title": "Data Engineer", "location": {"name": "['Toronto, Ontario', 'Remote']"}, "content": null},
+    {"id": 2003, "title": "", "location": {"name": "Nowhere"}},
+    {"id": 2001, "title": "Duplicate Of 2001", "location": {"name": "Remote"}},
+    {"id": 2004, "title": "Office Only", "location": null, "offices": [{"name": "Springfield"}, {"name": "Springfield"}]}
+  ]
+}

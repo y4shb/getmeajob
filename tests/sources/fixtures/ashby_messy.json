@@ -1,0 +1,35 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "aa000000-0000-4000-8000-000000000001",
+      "title": "Backend Engineer",
+      "location": "Toronto",
+      "secondaryLocations": [
+        {"location": "Springfield", "address": {"postalAddress": {"addressCountry": "Canada"}}},
+        {"location": "Toronto"},
+        "Montreal"
+      ],
+      "address": {"postalAddress": {"addressLocality": "Toronto", "addressCountry": "Canada"}},
+      "isListed": true,
+      "workplaceType": "OnSite",
+      "jobUrl": "https://jobs.ashbyhq.com/messyco/aa000000-0000-4000-8000-000000000001",
+      "descriptionPlain": "Build APIs.  Use Python.\n\n\n\nShip often.",
+      "publishedAt": "2026-11-01T10:00:00.000+00:00"
+    },
+    {
+      "id": "aa000000-0000-4000-8000-000000000002",
+      "title": "Hidden Role",
+      "location": "Remote",
+      "isListed": false
+    },
+    {
+      "id": "aa000000-0000-4000-8000-000000000003",
+      "title": "Support Engineer",
+      "location": "['Canada', 'United Kingdom']",
+      "isRemote": true,
+      "descriptionHtml": "<p>Help customers</p><ul><li>2+ years</li></ul>"
+    },
+    {"id": "null", "title": "Bad Id", "isListed": true}
+  ]
+}

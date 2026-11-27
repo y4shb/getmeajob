@@ -1,0 +1,35 @@
+{
+  "id": "744000000000001",
+  "uuid": "0b5e0000-0000-4000-8000-000000000001",
+  "name": "Backend Developer",
+  "refNumber": "PL-0001",
+  "company": {"identifier": "PlaceholderLabs", "name": "Placeholder Labs"},
+  "releasedDate": "2026-11-16T10:00:00.000Z",
+  "location": {"city": "", "region": "", "country": "ca", "remote": true},
+  "department": {"id": "8800001", "label": "Engineering"},
+  "typeOfEmployment": {"id": "permanent", "label": "Full-time"},
+  "experienceLevel": {"id": "associate", "label": "Associate"},
+  "applyUrl": "https://jobs.smartrecruiters.com/PlaceholderLabs/744000000000001-backend-developer?oga=true",
+  "postingUrl": "https://jobs.smartrecruiters.com/PlaceholderLabs/744000000000001-backend-developer",
+  "active": true,
+  "jobAd": {
+    "sections": {
+      "companyDescription": {
+        "title": "Company Description",
+        "text": "<p>Placeholder Labs is a made-up company for the getmeajob demo. We build scheduling tools for clinics.</p>"
+      },
+      "jobDescription": {
+        "title": "Job Description",
+        "text": "<p>Build and maintain the Python APIs behind our booking app.</p><ul><li>Write FastAPI services backed by Postgres</li><li>Ship small changes often and watch them in production</li></ul>"
+      },
+      "qualifications": {
+        "title": "Qualifications",
+        "text": "<ul><li>A minimum of 2 years of professional experience in backend development</li><li>Python and Postgres</li><li>Docker for local development</li></ul>"
+      },
+      "additionalInformation": {
+        "title": "Additional Information",
+        "text": "<p>This role is remote within Canada.</p>"
+      }
+    }
+  }
+}

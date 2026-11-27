@@ -178,10 +178,13 @@ def _forward_index(status: AppStatus) -> int:
 def transition_allowed(current: AppStatus | None, new: AppStatus, source: str) -> bool:
     """The status rules. Humans (`manual`, `xlsx`) may set anything; automatic sources
     only move forward, may close a job only before `applied`, may mark `ghosted` only
-    from `applied` or `screening`, and never move a job out of a side state."""
+    from `applied` or `screening`, and never move a job out of a side state, except that
+    sourcing may reopen a `closed` posting that came back (back to `discovered`)."""
     if current == new:
         return False
     if source in HUMAN_SOURCES:
+        return True
+    if current == AppStatus.closed and new == AppStatus.discovered and source == "source":
         return True
     if current in SIDE_STATES:
         return False

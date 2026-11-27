@@ -1,0 +1,37 @@
+# A made-up portals file for the getmeajob tests.
+title_filter:
+  positive: ["Backend", "word:SRE", "platform + engineer"]
+  negative: ["word:Manager", "Intern"]
+location_filter:
+  always_allow: ["Springfield"]
+  allow: ["Remote", "Canada"]
+  block: ["United States"]
+  block_hard: ["Onsite only"]
+company_aliases:
+  Example Corp: ["ExampleCo", "Example Corporation"]
+tracked_companies:
+  - name: Example Corp
+    provider: greenhouse
+    api: https://boards-api.greenhouse.io/v1/boards/examplecorp/jobs
+  - name: Sample Systems
+    careers_url: https://jobs.ashbyhq.com/samplesystems
+    notes: "hybrid in Springfield"
+  - name: Demo Widgets
+    careers_url: https://jobs.eu.lever.co/demowidgets
+    enabled: false
+  - name: Placeholder Labs
+    careers_url: https://careers.placeholder.example/jobs
+    scan_method: websearch
+    scan_query: "site:placeholder.example engineer"
+  - name: Widget Payroll
+    provider: workday
+    careers_url: https://payroll.example/careers
+  - name: Greenhouse Without Url
+    provider: greenhouse
+  - name: Sample Systems Again
+    api: https://api.ashbyhq.com/posting-api/job-board/samplesystems?includeCompensation=true
+  - careers_url: https://jobs.lever.co/nameless
+job_boards:
+  - name: Remote Board
+    provider: remotive
+    enabled: false

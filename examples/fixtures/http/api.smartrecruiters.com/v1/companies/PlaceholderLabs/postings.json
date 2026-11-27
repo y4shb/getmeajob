@@ -1,0 +1,24 @@
+{
+  "offset": 0,
+  "limit": 100,
+  "totalFound": 1,
+  "content": [
+    {
+      "id": "744000000000001",
+      "name": "Backend Developer",
+      "uuid": "0b5e0000-0000-4000-8000-000000000001",
+      "refNumber": "PL-0001",
+      "company": {"identifier": "PlaceholderLabs", "name": "Placeholder Labs"},
+      "releasedDate": "2026-11-16T10:00:00.000Z",
+      "location": {"city": "", "region": "", "country": "ca", "remote": true},
+      "industry": {"id": "computer_software", "label": "Computer Software"},
+      "department": {"id": "8800001", "label": "Engineering"},
+      "function": {"id": "engineering", "label": "Engineering"},
+      "typeOfEmployment": {"id": "permanent", "label": "Full-time"},
+      "experienceLevel": {"id": "associate", "label": "Associate"},
+      "customField": [],
+      "ref": "https://api.smartrecruiters.com/v1/companies/PlaceholderLabs/postings/744000000000001",
+      "language": {"code": "en", "label": "English"}
+    }
+  ]
+}
