@@ -26,7 +26,7 @@ You need Python 3.11 or newer and git. The demo uses a made-up candidate, Alex E
 
 1. Get the code.
    ```sh
-   git clone https://github.com/<owner>/getmeajob.git && cd getmeajob
+   git clone https://github.com/y4shb/getmeajob.git && cd getmeajob
    ```
 2. Make a virtual environment (on Windows, activate it with `.venv\Scripts\activate`).
    ```sh
@@ -347,3 +347,7 @@ Use only synthetic data in examples and tests: `example.com` addresses, `+1 555 
 ## License
 
 Apache-2.0. You may use, change and share this code, including in commercial work. If you share it or build on it, keep the [NOTICE](NOTICE) file, which credits the original author. See [LICENSE](LICENSE).
+
+## Author
+
+Made by Yash Bhardwaj ([@y4shb](https://github.com/y4shb)).

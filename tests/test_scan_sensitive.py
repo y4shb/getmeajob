@@ -294,3 +294,26 @@ def test_mask_and_redact() -> None:
     rules = scan.Rules([scan._denylist_pattern(DENY_TERM)])
     shown = scan.redact(f"docs/{DENY_TERM}-notes.md:(name)", rules, [])
     assert DENY_TERM not in shown and shown.startswith("docs/")
+
+
+def test_allow_scoped_to_file_and_term(tmp_path: Path) -> None:
+    repo = _new_repo(tmp_path / "scoped")
+    (repo / "NOTICE").write_text(f"Copyright {DENY_TERM.title()}\n", encoding="utf-8")
+    (repo / "app.py").write_text(f"AUTHOR = '{DENY_TERM}'\n", encoding="utf-8")
+    deny = tmp_path / "deny.txt"
+    deny.write_text(f"{DENY_TERM}\n", encoding="utf-8")
+    private_allow = tmp_path / "allow.txt"
+    private_allow.write_text(f"(?i)^denylist:NOTICE:[^=]*={DENY_TERM}$\n", encoding="utf-8")
+    code, output, data = _run(
+        "--tree",
+        "--repo",
+        str(repo),
+        "--denylist",
+        str(deny),
+        "--json",
+        env={"GETMEAJOB_ALLOW": str(private_allow)},
+    )
+    assert code == 1
+    locations = [f["location"] for f in data["findings"]]  # type: ignore[index]
+    assert locations == ["app.py:1"]
+    assert DENY_TERM not in output.lower()

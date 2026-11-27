@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
-authors = [{ name = "Yash Bhardwaj" }]
+authors = [{ name = "Yash Bhardwaj", email = "yashbhardwaj911@gmail.com" }]
 keywords = ["jobs", "job-search", "greenhouse", "ashby", "cli", "agents"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -27,6 +27,11 @@ dependencies = [
     "PyYAML>=6",
     "openpyxl>=3.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/y4shb/getmeajob"
+Repository = "https://github.com/y4shb/getmeajob"
+Issues = "https://github.com/y4shb/getmeajob/issues"
 
 [project.optional-dependencies]
 browser = ["playwright>=1.45"]

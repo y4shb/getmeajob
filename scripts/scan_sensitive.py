@@ -22,10 +22,12 @@ characters and the length. ALL-CAPS terms (env names, acronyms) match
 case-sensitively as whole tokens; other terms match case-insensitively as whole
 words, or as substrings when they start or end with punctuation.
 
-Allow rules: `.scan-allow` in the repo root (or --allow FILE), one regex per line,
-searched in `rule:location` and in `rule:matched-text` (so a line like
-`personal-url:github\\.com/owner/repo` allows that one repository link). A line of a
-scanned file that contains the marker `scan:allow` is skipped.
+Allow rules: `.scan-allow` in the repo root (or --allow FILE), plus an optional
+private file named by the GETMEAJOB_ALLOW environment variable (for allowances that
+would themselves reveal a private term). One regex per line, searched in
+`rule:location`, in `rule:matched-text` and in `rule:location=matched-text` (so a
+rule can allow one term in one file only). A line of a scanned file that contains
+the marker `scan:allow` is skipped.
 
 Exit codes: 0 clean, 1 findings, 2 usage or setup error.
 """
@@ -570,6 +572,11 @@ def run(args: argparse.Namespace) -> int:
     else:
         root = Path(git(Path(args.repo), "rev-parse", "--show-toplevel").decode().strip())
     allow = load_allow(Path(args.allow) if args.allow else root / ".scan-allow")
+    private_allow = os.environ.get("GETMEAJOB_ALLOW", "").strip()
+    if private_allow:
+        if not Path(private_allow).is_file():
+            raise SetupError("the private allow file does not exist (check GETMEAJOB_ALLOW)")
+        allow += load_allow(Path(private_allow))
     if args.path:
         scan_path(sc, root)
     if args.tree:
@@ -580,7 +587,7 @@ def run(args: argparse.Namespace) -> int:
         scan_staged(sc, root, skip_identity=args.skip_identity)
 
     def allowed(f: Finding) -> bool:
-        keys = (f"{f.rule}:{f.location}", f"{f.rule}:{f.value}")
+        keys = (f"{f.rule}:{f.location}", f"{f.rule}:{f.value}", f"{f.rule}:{f.location}={f.value}")
         return any(p.search(k) for p in allow for k in keys)
 
     findings = [f for f in sc.findings if not allowed(f)]

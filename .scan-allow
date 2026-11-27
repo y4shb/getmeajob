@@ -1,3 +1,8 @@
-# Allowed scanner findings (regexes matched against "rule:location").
-# The author's name is meant to appear in the license credit files only.
-^denylist:(NOTICE|pyproject\.toml):
+# Allowed scanner findings (regexes; see the docstring of scripts/scan_sensitive.py).
+# Credit and download files (NOTICE, LICENSE, README.md, pyproject.toml) may name the
+# project's author: name, GitHub username, email. Generic rules are allowed there by
+# location only. The author's own terms are allowed per file through a private allow
+# list (GETMEAJOB_ALLOW), so no personal term is written here. Code, tests, examples
+# and other docs get no allowance at all.
+^email:(NOTICE|pyproject\.toml):
+^personal-url:(NOTICE|README\.md|pyproject\.toml):[^=]*=(https?://)?(www\.)?github\.com/
