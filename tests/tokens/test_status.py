@@ -89,3 +89,11 @@ def test_status_suggests_nothing_once_the_tracker_is_current(
     later = (pipeline_ws.exports_dir / "tracker.xlsx").stat().st_mtime + 10
     os.utime(pipeline_ws.events_path, (later, later))  # the data changed after the report
     assert json.loads(cli(pipeline_ws, "--json", "status")[1])["next"] == "getmeajob report"
+
+
+def test_stale_plans_send_you_back_to_plan(pipeline_ws: Workspace, cli: Cli) -> None:
+    profile = pipeline_ws.profile_path
+    profile.write_text(profile.read_text().replace("Alex", "Alexa", 1))
+    code, out, _ = cli(pipeline_ws, "status")
+    assert code == 0
+    assert "next: getmeajob plan" in out

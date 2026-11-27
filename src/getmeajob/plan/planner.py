@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -25,7 +24,7 @@ from getmeajob.plan.answering import answer_one, find_refusal, resume_for
 from getmeajob.plan.overrides import Answers, load_answers
 from getmeajob.plan.plans import all_plans, load_plan
 from getmeajob.plan.profile import Profile, load_profile
-from getmeajob.plan.rules import Rule, load_refusal_patterns, load_rules
+from getmeajob.plan.rules import Rule, load_rules
 from getmeajob.plan.schema import PageReader, SchemaUnavailable, fetch_schema, form_url, schema_hash
 from getmeajob.sources.registry import ATS_FOR_FORMS
 from getmeajob.store import JobStore, QueueLog, StatusLog
@@ -43,7 +42,7 @@ __all__ = [
     "shortlist",
 ]
 
-PLANNER_VERSION = "1"
+PLANNER_VERSION = "2"
 DEFAULT_SHORTLIST = 60
 
 
@@ -58,7 +57,7 @@ class PlanRun:
 # ------------------------------------------------------------------- inputs
 
 
-def _rules_signature(rules: Sequence[Rule], refusal: Sequence[re.Pattern[str]]) -> str:
+def _rules_signature(rules: Sequence[Rule]) -> str:
     parts = [
         [
             r.id,
@@ -71,7 +70,7 @@ def _rules_signature(rules: Sequence[Rule], refusal: Sequence[re.Pattern[str]]) 
         ]
         for r in rules
     ]
-    return short_hash(json.dumps([parts, [p.pattern for p in refusal]], sort_keys=True))
+    return short_hash(json.dumps(parts, sort_keys=True))
 
 
 def _answers_signature(answers: Answers, job: Job) -> str:
@@ -97,11 +96,10 @@ class PlanInputs:
     profile: Profile
     rules: list[Rule]
     answers: Answers
-    refusal: list[re.Pattern[str]]
 
     @classmethod
     def load(cls, ws: Workspace) -> PlanInputs:
-        return cls(load_profile(ws), load_rules(ws), load_answers(ws), load_refusal_patterns(ws))
+        return cls(load_profile(ws), load_rules(ws), load_answers(ws))
 
     def digest(self, ws: Workspace, job: Job, shash: str) -> tuple[str, str | None]:
         """The `inputs_hash` of a plan for this job and form, and the resume it uses."""
@@ -111,7 +109,7 @@ class PlanInputs:
             shash,
             self.profile.digest(),
             _answers_signature(self.answers, job),
-            _rules_signature(self.rules, self.refusal),
+            _rules_signature(self.rules),
             _file_sig(ws, resume_path),
             [job.company, job.title, job.location, job.remote, job.workplace, job.board],
             job.description,
@@ -190,7 +188,7 @@ def _plan_job(
         return existing, True
     plan = _base_plan(job, PlanStatus.ready)
     plan.schema_hash, plan.inputs_hash, plan.resume_path = shash, digest, resume_path
-    refused = find_refusal(questions, inputs.refusal) or refusal_in(job.description)
+    refused = find_refusal(questions) or refusal_in(job.description)
     if refused is not None:
         plan.status, plan.blocked_reason = PlanStatus.blocked, "automation_refused"
         plan.unknowns = []

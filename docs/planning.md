@@ -80,8 +80,6 @@ rules:
     exclude: ['manager']                              # optional
     types: [text, select]                             # optional; default is any type
     answer: {kind: field, field: experience.notice_period}
-automation_refusal:                                   # optional extra blocking patterns
-  - 'this form must be completed by hand'
 ```
 
 Patterns are checked against the normalised label (lower case, no `*`). Useful answer kinds:

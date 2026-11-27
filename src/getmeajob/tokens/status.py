@@ -8,8 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from getmeajob.errors import GetmeajobError
 from getmeajob.files import minute_text, utc_text
 from getmeajob.models import ApplyStatus, AppStatus, PlanStatus, QueueKind
+from getmeajob.plan.planner import PlanInputs, plan_is_current
 from getmeajob.queue.view import counts_by_kind
 from getmeajob.report.rows import open_questions
 from getmeajob.sources.registry import ATS_FOR_FORMS
@@ -42,6 +44,17 @@ def _tracker_is_current(ws: Workspace) -> bool:
     return export.stat().st_mtime_ns > max(data, default=0)
 
 
+def _stale_plans(snap: Snapshot) -> bool:
+    ready = [(k, p) for k, p in snap.plans.items() if p.status == PlanStatus.ready]
+    if not ready:
+        return False
+    try:
+        inputs = PlanInputs.load(snap.ws)
+    except GetmeajobError:
+        return False
+    return any(not plan_is_current(snap.ws, p, snap.jobs.get(k), inputs) for k, p in ready)
+
+
 def _next_command(snap: Snapshot, unknowns: int) -> str | None:
     if not snap.jobs:
         return "getmeajob source"
@@ -59,7 +72,7 @@ def _next_command(snap: Snapshot, unknowns: int) -> str | None:
         and k not in snap.plans
         and job.ats in ATS_FOR_FORMS
     ]
-    if unplanned:
+    if unplanned or _stale_plans(snap):
         return "getmeajob plan"
     ready = [
         k

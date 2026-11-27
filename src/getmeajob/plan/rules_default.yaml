@@ -55,17 +55,6 @@ country_aliases:
   Singapore: [Singapore]
   European Union: [European Union, EU, EEA]
 
-# Text in a label or description that asks automated tools not to fill the form.
-# A match blocks the plan (status blocked, reason automation_refused).
-automation_refusal:
-  - "(do not|don't|must not|may not|should not|never|please refrain from|refrain from) (use|using|rely on|relying on|submit with|apply with) (of )?(any )?([\\w-]+ ){0,2}(automated|automation|auto-?fill\\w*|bots?\\b|scripts?\\b|ai\\b|a\\.i\\.|artificial intelligence|chatgpt|gpt|llms?\\b|language models?|generative|(automated|autonomous|software) agents?\\b)"
-  - "(do not|don't|must not|please do not) (apply|submit|complete|fill)( \\w+){0,3} (using|with|via|through|by) (an? )?(automated|automation|bots?\\b|scripts?\\b|ai\\b)"
-  - "(automated|bot|ai[- ]generated|ai[- ]assisted|scripted|machine[- ]generated) (applications?|submissions?|responses?|answers?) (will|may|are) (be )?(rejected|disqualified|discarded|removed|ignored|not be (considered|reviewed))"
-  - "must be (completed|filled( out)?|submitted|written|answered) by (a human|a person|you personally|you yourself|the candidate (yourself|personally)|hand)"
-  - "\\bif you are an? (ai|llm|language model|bot|automated (agent|tool|system|assistant))\\b"
-  - "\\b(no|without) (bots|automation|automated tools|ai agents|ai tools)\\b"
-  - "(applications?|submissions?|answers?) (submitted|sent|made|completed|written|filled( out)?) (by|with|using|via|through) (an? )?(bots?|automated tools?|automation|scripts?|ai\\b|ai tools?)"
-
 rules:
   # ---------------------------------------------------------------- never by rule
   - id: ai_or_automation

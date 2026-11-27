@@ -192,13 +192,6 @@ def load_rules(ws: Workspace | None) -> list[Rule]:
     return user + [r for r in default_rules() if r.id not in taken]
 
 
-def load_refusal_patterns(ws: Workspace | None) -> list[re.Pattern[str]]:
-    """Patterns that mean "do not fill this form with tools" (defaults plus user extras)."""
-    patterns = _flatten(_default_data().get("automation_refusal"))
-    patterns += _flatten(_user_data(ws).get("automation_refusal"))
-    return _compile(patterns, "automation_refusal")
-
-
 # ----------------------------------------------------------------- applying
 
 

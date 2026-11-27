@@ -8,7 +8,6 @@ answer become `UnknownQuestion`s; optional ones become blank answers with source
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
@@ -19,7 +18,7 @@ from getmeajob.plan.overrides import Answers, entry_value, lookup
 from getmeajob.plan.profile import Profile, is_blank
 from getmeajob.plan.rules import Rule, answer_question
 from getmeajob.resume.store import role_for_key
-from getmeajob.textutil import html_to_text, norm_label, options_hash, truncate
+from getmeajob.textutil import html_to_text, norm_label, options_hash, refusal_in, truncate
 from getmeajob.workspace import Workspace
 
 CHOICES = (QuestionType.select, QuestionType.boolean)
@@ -141,12 +140,10 @@ def answer_one(
     return PlannedAnswer(q.id, q.label, q.type, value, outcome.source, note=outcome.reason)
 
 
-def find_refusal(questions: Iterable[Question], patterns: Sequence[re.Pattern[str]]) -> str | None:
-    """The first "do not use automated tools" text in a label or description, if any."""
+def find_refusal(questions: Iterable[Question]) -> str | None:
+    """The first "do not use automated tools" sentence in a label or description, if any."""
     for q in questions:
-        text = f"{norm_label(q.label)}\n{html_to_text(q.description or '').casefold()}"
-        for pattern in patterns:
-            found = pattern.search(text)
-            if found:
-                return truncate(found.group(0), 120)
+        found = refusal_in(f"{q.label}\n{html_to_text(q.description or '')}")
+        if found:
+            return found
     return None

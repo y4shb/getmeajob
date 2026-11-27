@@ -64,16 +64,40 @@ _SPACES = re.compile(r"[ \t\f\v]+")
 _MANY_NEWLINES = re.compile(r"\n{3,}")
 _WS = re.compile(r"\s+")
 _LABEL_MARKERS = re.compile(r"\((?:required|optional)\)")
-_TOOLS = r"(ai|automated|automation|bots?|scripts?)"
-# Wording aimed at the applicant, so "We never use automated tools to screen" is not one.
-_REFUSAL = re.compile(
-    r"(?<!\bwe )\b(do not|don['’]?t|must not|may not|should not) use\b"
-    rf"[^.!?\n]{{0,60}}?\b{_TOOLS}\b"
-    r"(?:(?!\bto\b)[^.!?\n]){0,60}\bto (apply|complete|fill|submit)\b|"
-    rf"\bapplications? (submitted|completed|filled( in| out)?) (using|with|by) (an? )?{_TOOLS}\b"
-    r"[^.!?\n]{0,40}?\bwill be (rejected|disqualified|removed|discarded)\b",
+# "Do not use automated tools" notices aimed at the applicant. A sentence counts when it
+# names a tool, a prohibition and the application itself, and is not the employer
+# describing its own tools ("We never use automated tools to screen candidates").
+_TOOL = re.compile(
+    r"\b(ai|artificial intelligence|chatgpt|gpt|llms?|(large )?language models?|chat ?bots?|"
+    r"bots?|automated|automation|auto-?fill\w*|scripts?|scripted)\b",
     re.I,
 )
+_NO = re.compile(
+    r"\b(do not|don['’]t|must not|may not|should not|cannot|can['’]t|never|refrain from|"
+    r"prohibited|forbidden|banned|not (be )?(accepted|allowed|permitted|considered)|"
+    r"(will be|are|is) (rejected|disqualified|removed|discarded|ignored))\b",
+    re.I,
+)
+_FOR = re.compile(
+    r"\b(apply|applying|applications?|applicants?|this (form|role|job|position|posting)|"
+    r"your (answers?|responses?|cover letter|application|resume|cv)|"
+    r"answer(ing)? (these|the|any|our) questions|(these|screening) questions|"
+    r"fill(ing)? (out|in) (this|the) form)\b",
+    re.I,
+)
+_SELF = re.compile(
+    r"\b(we|our [\w-]+( [\w-]+)?|recruiters?|engineers?|employees?|staff|hiring managers?)\b"
+    r"[^.!?;\n]{0,30}?\b(do not|don['’]t|never|won['’]t|will not|must not|may not|cannot)\s+"
+    r"(use|rely on|employ)\b",
+    re.I,
+)
+_DIRECT = re.compile(
+    r"\bif you are an? (ai|llm|(ai )?language model|bot|automated (agent|tool|system))\b|"
+    r"\bmust be (completed|filled( out)?|submitted|written|answered) by "
+    r"(a human|a person|you personally|yourself|hand)\b",
+    re.I,
+)
+_SENTENCE = re.compile(r"[^.!?;\n]+[.!?;]?")
 
 
 class _TextExtractor(HTMLParser):
@@ -213,5 +237,10 @@ def sentence_at(text: str, match: re.Match[str]) -> str:
 
 def refusal_in(text: str) -> str | None:
     """The sentence asking applicants not to use automated tools, or None."""
-    match = _REFUSAL.search(text)
-    return sentence_at(text, match) if match else None
+    for found in _SENTENCE.finditer(text):
+        s = found.group(0)
+        direct = _DIRECT.search(s)
+        aimed = _TOOL.search(s) and _NO.search(s) and _FOR.search(s) and not _SELF.search(s)
+        if direct or aimed:
+            return truncate(" ".join(s.split()), 200)
+    return None

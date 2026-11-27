@@ -304,7 +304,6 @@ def test_user_rules_first_and_bad_regex(tmp_ws: Workspace) -> None:
 )
 def test_refusal_patterns(make_q: Callable[..., Question], text: str, blocks: bool) -> None:
     from getmeajob.plan.answering import find_refusal
-    from getmeajob.plan.rules import load_refusal_patterns
 
     q = make_q("Cover letter", QuestionType.textarea, description=f"<p>{text}</p>")
-    assert (find_refusal([q], load_refusal_patterns(None)) is not None) is blocks
+    assert (find_refusal([q]) is not None) is blocks
