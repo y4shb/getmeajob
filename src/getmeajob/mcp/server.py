@@ -1,6 +1,6 @@
 """The getmeajob MCP server: stdio only, server name `getmeajob`, tools `getmeajob_<verb>`.
 
-The `mcp` package is an optional extra (`pip install "getmeajob[mcp]"`) and is imported
+The `mcp` package is an optional extra (`pip install -e ".[mcp]"`) and is imported
 only here, when the server is built. The tools themselves live in `tools.py`.
 """
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 SERVER_NAME = "getmeajob"
 ERROR_PREFIX = "error:"
-INSTALL_HINT = 'Install it with: pip install "getmeajob[mcp]"'
+INSTALL_HINT = 'Install it with: pip install -e ".[mcp]"'
 INSTRUCTIONS = """\
 getmeajob job-search tools. Start with getmeajob_status.
 Rules: never invent facts about the user; gaps stay gaps. Save only answers the user gave

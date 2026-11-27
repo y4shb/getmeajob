@@ -67,5 +67,5 @@ Keep track:
 
 1. Codex CLI: Codex reads `AGENTS.md` from the folder you start it in. Copy this file and `POLICY.md` there, or tell Codex to read `agents/AGENTS.md` first.
 2. Cursor and other editors: add a project rule that tells the agent to read this file and `POLICY.md`.
-3. MCP clients that start local servers (Claude Desktop, Claude Code, Codex CLI): install `pip install "getmeajob[mcp]"`, then run `getmeajob mcp config` for a ready-made snippet. The tools are named `getmeajob_status`, `getmeajob_rank`, `getmeajob_unknowns` and so on, and none of them fills or submits a form.
+3. MCP clients that start local servers (Claude Desktop, Claude Code, Codex CLI): install `pip install -e ".[mcp]"`, then run `getmeajob mcp config` for a ready-made snippet. The tools are named `getmeajob_status`, `getmeajob_rank`, `getmeajob_unknowns` and so on, and none of them fills or submits a form.
 4. ChatGPT: the ChatGPT apps connect only to remote MCP servers over HTTPS. getmeajob's server runs on your computer and is never put on the network, because that would expose your workspace. Use a local agent such as Codex CLI with this file instead.

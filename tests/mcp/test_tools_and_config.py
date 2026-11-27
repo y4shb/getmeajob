@@ -126,7 +126,7 @@ def test_missing_mcp_package_prints_an_install_hint(
     assert main(["mcp", "--home", str(tmp_path)]) == 2
     err = capsys.readouterr().err
     assert "needs the optional `mcp` package" in err
-    assert 'pip install "getmeajob[mcp]"' in err
+    assert 'pip install -e ".[mcp]"' in err
 
     monkeypatch.setattr(server_module, "_mcp_version", lambda: "1.9.0")
     with pytest.raises(GetmeajobError, match="version 2 or newer"):

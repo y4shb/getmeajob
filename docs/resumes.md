@@ -13,7 +13,7 @@ getmeajob resume pick KEY        # the best existing PDF for a job
 getmeajob resume lint [PATH]     # wording warnings
 ```
 
-`render` needs the browser extra: `pip install "getmeajob[browser]"`, then `playwright install chromium`.
+`render` needs the browser extra: `pip install -e ".[browser]"`, then `playwright install chromium`.
 
 ## The truthfulness rule
 

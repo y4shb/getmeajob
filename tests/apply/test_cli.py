@@ -60,7 +60,7 @@ def test_playwright_missing_hint(
     monkeypatch.setitem(sys.modules, "playwright", None)
     monkeypatch.setitem(sys.modules, "playwright.sync_api", None)
     err = _fails(capsys, ["--home", str(ready_ws.root), "apply", "--mode", "dry"])
-    assert 'pip install "getmeajob[browser]"' in err and "playwright install chromium" in err
+    assert 'pip install -e ".[browser]"' in err and "playwright install chromium" in err
 
 
 def test_skips_print_without_a_browser(

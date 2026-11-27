@@ -1,6 +1,6 @@
 """Turn a role folder's resume into a one-page PDF with Playwright.
 
-Playwright is optional (`pip install "getmeajob[browser]"` then `playwright install
+Playwright is optional (`pip install -e ".[browser]"` then `playwright install
 chromium`) and is imported only when you render. The page is measured in the browser before
 printing. If the resume is too long, your shorter wordings are tried first, then the
 lowest-scoring bullets are dropped one at a time, keeping at least two per role.
@@ -25,7 +25,7 @@ MAX_ATTEMPTS = 80
 _PAGE_COUNT = re.compile(rb"/Type\s*/Page(?![a-zA-Z])")
 _MEASURE = "() => document.querySelector('.page').getBoundingClientRect().height"
 _INSTALL_HINT = (
-    'Install the browser extra with `pip install "getmeajob[browser]"` and then run '
+    'Install the browser extra with `pip install -e ".[browser]"` and then run '
     "`playwright install chromium`."
 )
 

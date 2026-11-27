@@ -308,7 +308,7 @@ def _ashby(client: HttpClient, job: Job, reader: PageReader | None) -> list[Ques
         if reader is None:
             raise SchemaUnavailable(
                 f"{first.message} Reading the page instead needs Playwright and the network.",
-                hint="Install the browser extra (pip install 'getmeajob[browser]') or try later.",
+                hint="Install the browser extra (pip install -e '.[browser]') or try later.",
             ) from first
         url = form_url(job)
         try:

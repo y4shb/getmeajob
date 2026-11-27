@@ -5,7 +5,7 @@ getmeajob mcp config              snippets for Claude Desktop, Claude Code and C
 getmeajob mcp config --client codex
 
 The workspace comes from --home or GETMEAJOB_HOME. The server needs the optional
-extra: pip install "getmeajob[mcp]".
+extra: pip install -e ".[mcp]".
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def _cmd_config(args: argparse.Namespace, ctx: Context) -> int:
             "first, or pass --home PATH."
         )
     if not mcp_installed():
-        ctx.out.line('note: the mcp package is missing. Install it: pip install "getmeajob[mcp]"')
+        ctx.out.line('note: the mcp package is missing. Install it: pip install -e ".[mcp]"')
     return 0
 
 

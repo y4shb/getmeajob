@@ -93,7 +93,7 @@ The demo workspace (`getmeajob init --demo`) never opens a real job site. `examp
 
 ## If something is missing
 
-- "Filling forms needs Playwright": run `pip install "getmeajob[browser]"`, then `playwright install chromium`.
+- "Filling forms needs Playwright": run `pip install -e ".[browser]"`, then `playwright install chromium`.
 - "A hold run needs a visible browser window": add `--headed`, and run it on a computer with a screen.
 
 Next: run `getmeajob apply --mode dry` and open the first screenshot in `shots/`.

@@ -160,7 +160,7 @@ def plugin_commands(assets: Assets) -> list[str]:
 def available(assets: Assets) -> list[dict[str, Any]]:
     """What `getmeajob agents list` shows: each installable piece and how to install it."""
     commands = [p.stem for p in assets.command_files()]
-    mcp_note = "" if mcp_installed() else ' (first: pip install "getmeajob[mcp]")'
+    mcp_note = "" if mcp_installed() else ' (first: pip install -e ".[mcp]")'
     return [
         {
             "name": "claude-plugin",

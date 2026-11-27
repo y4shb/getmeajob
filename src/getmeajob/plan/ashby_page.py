@@ -144,7 +144,7 @@ def schema_from_page(url: str, *, timeout_ms: int = 30_000) -> list[Question]:
     except ImportError as exc:
         raise GetmeajobError(
             "Reading the Ashby page needs Playwright.",
-            hint="Install it with: pip install 'getmeajob[browser]' && playwright install chromium",
+            hint="Install it with: pip install -e '.[browser]' && playwright install chromium",
         ) from exc
     try:
         with sync_playwright() as pw:

@@ -11,4 +11,4 @@ Follow the getmeajob skill and its `POLICY.md`: never fill a form yourself, neve
 4. For `fill_problem`, `captcha`, `account_required` or `automation_refused`, point to `/getmeajob:queue`. Never try to work around them.
 5. When the user is happy with a job, suggest `/getmeajob:hold-run KEY`. Do not submit anything.
 
-If the result says Playwright is missing, show its hint: `pip install "getmeajob[browser]"`, then `playwright install chromium`.
+If the result says Playwright is missing, show its hint: `pip install -e ".[browser]"`, then `playwright install chromium`.

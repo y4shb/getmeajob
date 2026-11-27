@@ -76,7 +76,7 @@ class AnthropicProvider:
         except ImportError as exc:
             raise GetmeajobError(
                 "Drafting with Claude needs the anthropic package.",
-                hint="Install it with: pip install 'getmeajob[llm]'",
+                hint="Install it with: pip install -e '.[llm]'",
             ) from exc
         try:
             client = anthropic.Anthropic()
@@ -106,7 +106,7 @@ class AnthropicProvider:
         except TypeError as exc:
             raise GetmeajobError(
                 "The installed anthropic package is too old for drafting.",
-                hint="Update it with: pip install -U 'getmeajob[llm]'",
+                hint="Update it with: pip install -U -e '.[llm]'",
             ) from exc
         if response.stop_reason == "refusal":
             text = ASK_HUMAN

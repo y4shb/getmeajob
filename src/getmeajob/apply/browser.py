@@ -1,7 +1,7 @@
 """Starting Chromium with Playwright, one fresh context per job, and recovering from a
 closed window or a crashed browser.
 
-Playwright is optional (`pip install "getmeajob[browser]"`), so it is imported only
+Playwright is optional (`pip install -e ".[browser]"`), so it is imported only
 when a browser is really needed, with a plain-language hint when it is missing.
 """
 
@@ -16,9 +16,7 @@ from getmeajob.errors import GetmeajobError
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, BrowserContext, Page, Playwright, Route, ViewportSize
 
-INSTALL_HINT = (
-    'Install it with: pip install "getmeajob[browser]"  then: playwright install chromium'
-)
+INSTALL_HINT = 'Install it with: pip install -e ".[browser]"  then: playwright install chromium'
 VIEWPORT: ViewportSize = {"width": 1280, "height": 900}
 
 

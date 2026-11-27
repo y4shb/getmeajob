@@ -31,7 +31,7 @@ It never replaces a file that is already there. Add `--force` to replace them.
 
 ## The MCP server
 
-1. Install the extra: `pip install "getmeajob[mcp]"`.
+1. Install the extra: `pip install -e ".[mcp]"`.
 2. Run `getmeajob mcp config`. It prints snippets for Claude Desktop, Claude Code and Codex CLI with your workspace path filled in.
 3. Paste the one for your client. The client starts the server itself with `getmeajob mcp`.
 

@@ -105,7 +105,7 @@ The full list of kinds is `KINDS` in `src/getmeajob/plan/rules.py`. A bad patter
 
 Providers:
 
-- `--provider anthropic` uses Claude through the optional `anthropic` package (`pip install 'getmeajob[llm]'`). The SDK reads its key from `ANTHROPIC_API_KEY`.
+- `--provider anthropic` uses Claude through the optional `anthropic` package (`pip install -e '.[llm]'`). The SDK reads its key from `ANTHROPIC_API_KEY`.
 - `--provider command` runs the command in `GETMEAJOB_LLM_COMMAND` with the prompt on stdin and reads the answer from stdout. Any command line tool works.
 
 ## Where form questions come from
