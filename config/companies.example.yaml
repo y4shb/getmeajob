@@ -1,0 +1,14 @@
+# Companies to watch. getmeajob reads each company's public job board.
+# `getmeajob discover FILE --write` can find the ats and slug for you from names or URLs.
+#
+# Each entry has these fields (only name, ats and slug are needed):
+#   - name: Example Corp          # the company name
+#     ats: greenhouse             # greenhouse, ashby, lever, smartrecruiters, workable or recruitee
+#     slug: examplecorp           # the board name in the job board URL
+#     enabled: true               # false skips it without deleting it
+#     careers_url:                # the company's careers page, if you know it
+#     region:                     # lever only: "eu" for boards on the EU host
+#     verified: true              # false when the board name did not match the company
+#     notes:                      # anything you want to remember
+
+companies: []

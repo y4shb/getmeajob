@@ -1,0 +1,74 @@
+# Demo fact bank for Alex Example (synthetic). Tailored resumes only select and order
+# these sentences; nothing new is written.
+
+header:
+  name: Alex Example
+  email: alex@example.com
+  phone: "+1 555 0100"
+  location: Springfield, Ontario, Canada
+  links:
+    - https://www.example.com/in/alex-example
+    - https://github.example/alex-example
+    - https://alex.example
+
+summaries:
+  - id: sum-backend
+    text: Backend engineer with four years of experience building Python services and PostgreSQL data models.
+    tags: [backend, python, postgres, api]
+  - id: sum-platform
+    text: Software engineer who runs services on Kubernetes and AWS and keeps deploys calm and repeatable.
+    tags: [platform, kubernetes, aws, docker]
+
+experience:
+  - company: Initech Example Ltd
+    title: Software Engineer
+    start: "2021-06"
+    end: present
+    bullets:
+      - id: ini-api
+        text: Built and maintained FastAPI services in Python that handle about two million requests a day.
+        tags: [python, fastapi, backend, api]
+        short: Built FastAPI services in Python serving two million requests a day.
+      - id: ini-postgres
+        text: Redesigned PostgreSQL schemas and indexes, cutting the slowest report query from 9 seconds to 400 ms.
+        tags: [postgres, sql, performance, backend]
+        short: Cut the slowest PostgreSQL report query from 9 seconds to 400 ms.
+      - id: ini-k8s
+        text: Moved 14 services from virtual machines to Kubernetes, with Helm charts and one shared deploy pipeline.
+        tags: [kubernetes, docker, platform, ci]
+      - id: ini-aws
+        text: Set up the AWS infrastructure for a new billing service using managed queues and object storage.
+        tags: [aws, backend, platform]
+      - id: ini-oncall
+        text: Shared on-call for the core API and wrote runbooks that shortened incident response.
+        tags: [reliability, operations, api]
+      - id: ini-mentor
+        text: Mentored two junior engineers through code review and weekly pairing sessions.
+        tags: [mentoring, collaboration]
+  - company: Globex Example Inc
+    title: Software Engineering Intern
+    start: "2020-05"
+    end: "2020-08"
+    bullets:
+      - id: glx-tests
+        text: Wrote Python integration tests for an internal inventory service, raising coverage from 40 to 75 percent.
+        tags: [python, testing]
+      - id: glx-docker
+        text: Packaged a legacy reporting tool in Docker so the whole team could run it locally.
+        tags: [docker, tooling]
+
+projects: []
+
+skills:
+  languages: [Python, SQL]
+  frameworks: [FastAPI]
+  data: [PostgreSQL]
+  infrastructure: [Kubernetes, Docker, AWS]
+  practices: [Testing, Code review, On-call]
+
+education:
+  - school: Example State University
+    degree: Bachelor of Science
+    field: Computer Science
+    start: "2017"
+    end: "2021"

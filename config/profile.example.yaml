@@ -1,0 +1,95 @@
+# Your profile. Form answers come only from this file, so fill in what is true for you.
+# Leave a field empty when you do not want getmeajob to answer it; the question then
+# shows up as an "unknown" for you to answer yourself.
+# This file stays in your workspace and is never committed (see .gitignore).
+
+identity:
+  first_name:        # as you want it on applications
+  last_name:
+  preferred_name:    # the name you go by, if different
+  full_name:         # first and last name together
+  pronouns:          # leave empty to skip
+
+contact:
+  email:
+  phone:              # the full number, for example +1 555 0100
+  phone_country_code: # for example +1
+  phone_local:        # the number without the country code
+
+links:
+  linkedin:   # full URL of your profile
+  github:
+  website:
+  portfolio:
+
+location:
+  city:
+  state:                # state, province or region
+  country:
+  postal_code:
+  timezone:             # for example America/Toronto
+  city_aliases: []      # other names for your city that job posts use
+  willing_to_relocate:  # true or false
+  open_to_hybrid:       # true or false
+  open_to_onsite:       # true or false
+
+eligibility:
+  authorized_countries: []         # countries where you may work today
+  needs_sponsorship_countries: []  # countries where you would need a visa sponsor
+  citizenship:
+  over_18:                         # true or false
+  background_check_ok:             # true or false
+  drug_test_ok:                    # true or false
+  has_noncompete:                  # true or false
+  government_official:             # true or false (some forms ask about public office)
+
+experience:
+  total_years:         # years of professional experience, a number
+  current_company:
+  current_title:
+  employment_status:   # for example employed, not employed, student
+  notice_period:       # for example 2 weeks
+  earliest_start:      # a date (YYYY-MM-DD) or text such as "after notice period"
+  former_employers: []
+  primary_languages: [] # programming languages you use most
+
+education:  # one entry per school, most recent first
+  - school:
+    school_aliases: []  # short or old names forms might list
+    degree:             # for example Bachelor of Science
+    degree_level:       # for example bachelors, masters, phd
+    discipline:         # your field of study
+    start_year:
+    end_year:
+
+employment:  # one entry per job, most recent first
+  - company:
+    title:
+    start:    # YYYY-MM
+    end:      # YYYY-MM, empty if this is your current job
+    current:  # true or false
+
+compensation:
+  expected_text:    # how you want to state it, for example "Open to discussing"
+  expected_number:  # a number, used only where a form asks for one
+  currency:         # for example CAD
+  share_current:    # true or false: may getmeajob state your current pay?
+  current_text:
+
+eeo:  # voluntary demographic questions; empty means "decline to self-identify"
+  gender:
+  race:
+  veteran:
+  disability:
+  pronouns:
+
+source:
+  how_did_you_hear:  # default answer to "How did you hear about us?"
+
+consent:
+  privacy_notice: false        # true lets getmeajob tick "I have read the privacy notice"
+  future_opportunities: false  # true lets it opt in to hearing about other roles
+
+files:
+  resume:        # path to your resume PDF, relative to the workspace (for example resume/base.pdf)
+  cover_letter:  # optional, same rules

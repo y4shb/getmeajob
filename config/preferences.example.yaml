@@ -1,0 +1,78 @@
+# What you are looking for. Ranking reads everything from this file; nothing about
+# you is built into the code. Every job gets a score from 0 to 100 and a short list of
+# reasons, and hard flags (for example "too senior") make a job ineligible.
+
+candidate:
+  years_experience:     # your years of professional experience, a number
+  home:
+    city:
+    region:             # state, province or region
+    country:
+    city_aliases: []    # other spellings job posts use for your city
+    country_aliases: [] # for example short codes for your country
+
+# Kinds of roles you want. A job's title must match one track to count as on track.
+# Example:
+#   - name: backend
+#     title_any: [backend, software engineer]   # words in the job title
+#     jd_any: [python, postgres]                # words in the job description
+#     weight: 1.0                               # how much you want this track (0 to 1)
+tracks: []
+
+title:
+  exclude: []     # title words you never want (for example manager, sales)
+  too_senior: []  # title words that mean too senior for you (for example staff, principal)
+  junior: []      # title words that mean too junior (for example intern)
+
+experience:
+  stretch_years: 2      # a job may ask for this many more years than you have
+  too_senior_over: 6    # a job asking for more years than this is too senior
+
+locations:
+  # How much you like each kind of location, from 0 (no) to 1 (ideal).
+  tiers:
+    - name: Remote anywhere
+      kind: remote_worldwide
+      score: 1.0
+    - name: Remote in my country
+      kind: remote_home_country
+      score: 1.0
+    - name: Hybrid in my city
+      kind: hybrid_home_city
+      score: 0.8
+    - name: On site in my city
+      kind: onsite_home_city
+      score: 0.6
+    - name: Elsewhere in my country
+      kind: home_country_other
+      score: 0.3
+    - name: Anywhere else
+      kind: other
+      score: 0.0
+  allowed_regions: []  # regions a "remote" job may be limited to and still suit you
+
+skills:
+  have: {}   # skills you have, with a weight, for example {python: 3, postgres: 2}
+  lack: []   # skills you do not have and want flagged as gaps
+
+eligibility:
+  needs_sponsorship_in: []  # countries where you would need a visa sponsor
+  authorized_in: []         # countries where you may work today
+  has_clearance: false      # true if you hold a security clearance
+  citizenships: []
+
+weights:  # how much each part counts toward the score
+  experience: 30
+  title: 25
+  location: 25
+  skills: 20
+
+thresholds:
+  shortlist: 60  # eligible jobs with at least this score are shortlisted
+
+exclude_companies: []  # company names or slugs to skip completely
+
+apply:
+  submit_boards: []    # ATS names where submit mode is allowed, for example [greenhouse]
+  per_company_cap: 2   # at most this many applications to one company in 30 days
+  exclude: []          # company slugs or name parts never to apply to

@@ -1,0 +1,53 @@
+# Personal data. Your workspace holds your profile, answers, logs and resumes.
+workspace/
+/data/
+profile.yaml
+answers*.yaml
+*.profile.yaml
+ledger*.jsonl
+events*.jsonl
+queue*.jsonl
+
+# Screenshots, browser profiles and generated documents
+shots/
+screenshots/
+*.png
+*.jpg
+browser-profile/
+pw-profile*/
+resumes/
+roles/
+*.pdf
+
+# Secrets and caches
+.env
+.env.*
+cache/
+.cache/
+
+# Spreadsheets and exports
+*.xlsx
+*.xls
+*.csv
+
+# Python and tooling
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+.DS_Store
+
+# Synthetic files that ship with the repo stay tracked.
+!config/*.example.yaml
+!examples/**
+!docs/assets/**
+!tests/fixtures/**
+
+# ...but these never belong in the repo, not even under examples/ or tests/fixtures/.
+**/.DS_Store
+**/__pycache__/
+*.pyc

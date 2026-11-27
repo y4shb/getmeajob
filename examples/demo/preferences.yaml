@@ -1,0 +1,77 @@
+# Demo preferences for Alex Example (synthetic).
+
+candidate:
+  years_experience: 4
+  home:
+    city: Springfield
+    region: Ontario
+    country: Canada
+    city_aliases: []
+    country_aliases: [CA, CAN]
+
+tracks:
+  - name: backend
+    title_any: [backend, software engineer, software developer]
+    jd_any: [python, postgres, api, fastapi]
+    weight: 1.0
+  - name: platform
+    title_any: [platform, infrastructure, devops, site reliability]
+    jd_any: [kubernetes, terraform, aws, docker]
+    weight: 0.9
+
+title:
+  exclude: [manager, director, head of, vice president, recruiter, sales]
+  too_senior: [staff, principal, distinguished]
+  junior: [intern, junior, new grad]
+
+experience:
+  stretch_years: 2
+  too_senior_over: 6
+
+locations:
+  tiers:
+    - name: Remote anywhere
+      kind: remote_worldwide
+      score: 1.0
+    - name: Remote in Canada
+      kind: remote_home_country
+      score: 1.0
+    - name: Hybrid in Springfield
+      kind: hybrid_home_city
+      score: 0.9
+    - name: On site in Springfield
+      kind: onsite_home_city
+      score: 0.6
+    - name: Elsewhere in Canada
+      kind: home_country_other
+      score: 0.3
+    - name: Anywhere else
+      kind: other
+      score: 0.0
+  allowed_regions: [Canada, Worldwide, Anywhere]
+
+skills:
+  have: {python: 3, postgres: 2, kubernetes: 2, aws: 2, fastapi: 1, docker: 1}
+  lack: [go, rust, scala]
+
+eligibility:
+  needs_sponsorship_in: [United States]
+  authorized_in: [Canada]
+  has_clearance: false
+  citizenships: []
+
+weights:
+  experience: 30
+  title: 25
+  location: 25
+  skills: 20
+
+thresholds:
+  shortlist: 50
+
+exclude_companies: []
+
+apply:
+  submit_boards: []
+  per_company_cap: 2
+  exclude: []

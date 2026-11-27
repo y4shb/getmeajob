@@ -1,0 +1,11 @@
+# Runs the privacy scanner on staged files before each commit.
+# Set GETMEAJOB_DENYLIST to your private list of terms to also check for them.
+repos:
+  - repo: local
+    hooks:
+      - id: scan-sensitive
+        name: scan for personal data and secrets
+        entry: python scripts/scan_sensitive.py --staged
+        language: python
+        pass_filenames: false
+        always_run: true

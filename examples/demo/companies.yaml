@@ -1,0 +1,20 @@
+# Demo companies. All four are made up; their boards are replayed from
+# examples/fixtures, so the demo never uses the network.
+
+companies:
+  - name: Example Corp
+    ats: greenhouse
+    slug: examplecorp
+    enabled: true
+  - name: Sample Systems
+    ats: ashby
+    slug: samplesystems
+    enabled: true
+  - name: Demo Widgets
+    ats: lever
+    slug: demowidgets
+    enabled: true
+  - name: Placeholder Labs
+    ats: smartrecruiters
+    slug: PlaceholderLabs
+    enabled: true

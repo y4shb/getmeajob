@@ -1,0 +1,97 @@
+# Demo profile. Alex Example is synthetic: every detail here is made up.
+
+identity:
+  first_name: Alex
+  last_name: Example
+  preferred_name: Alex
+  full_name: Alex Example
+  pronouns:
+
+contact:
+  email: alex@example.com
+  phone: "+1 555 0100"
+  phone_country_code: "+1"
+  phone_local: "5550100"
+
+links:
+  linkedin: https://www.example.com/in/alex-example
+  github: https://github.example/alex-example
+  website: https://alex.example
+  portfolio:
+
+location:
+  city: Springfield
+  state: Ontario
+  country: Canada
+  postal_code:
+  timezone: America/Toronto
+  city_aliases: []
+  willing_to_relocate: false
+  open_to_hybrid: true
+  open_to_onsite: false
+
+eligibility:
+  authorized_countries: [Canada]
+  needs_sponsorship_countries: [United States]
+  citizenship:
+  over_18: true
+  background_check_ok: true
+  drug_test_ok: true
+  has_noncompete: false
+  government_official: false
+
+experience:
+  total_years: 4
+  current_company: Initech Example Ltd
+  current_title: Software Engineer
+  employment_status: employed
+  notice_period: 2 weeks
+  earliest_start:
+  former_employers: [Globex Example Inc]
+  primary_languages: [Python, SQL]
+
+education:
+  - school: Example State University
+    school_aliases: []
+    degree: Bachelor of Science
+    degree_level: bachelors
+    discipline: Computer Science
+    start_year: 2017
+    end_year: 2021
+
+employment:
+  - company: Initech Example Ltd
+    title: Software Engineer
+    start: "2021-06"
+    end:
+    current: true
+  - company: Globex Example Inc
+    title: Software Engineering Intern
+    start: "2020-05"
+    end: "2020-08"
+    current: false
+
+compensation:
+  expected_text:
+  expected_number:
+  currency: CAD
+  share_current: false
+  current_text:
+
+eeo:
+  gender:
+  race:
+  veteran:
+  disability:
+  pronouns:
+
+source:
+  how_did_you_hear: Company careers page
+
+consent:
+  privacy_notice: true
+  future_opportunities: false
+
+files:
+  resume: resume/base.pdf
+  cover_letter:
