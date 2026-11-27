@@ -72,7 +72,13 @@ step "Review every answer that would be sent"
 run plan review
 
 step "Fill both mock forms in Chromium without submitting"
-run apply --mode dry
+dry="$(run apply --mode dry)"
+printf '%s\n' "$dry"
+if ! printf '%s\n' "$dry" | grep -q "2 dry_ok"; then
+  echo "error: the dry run did not fill both demo forms." >&2
+  echo "hint: install the browser it drives: playwright install chromium" >&2
+  exit 1
+fi
 
 step "Write the Excel and Markdown trackers"
 run report
