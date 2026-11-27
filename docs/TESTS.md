@@ -32,7 +32,7 @@ GETMEAJOB_DENYLIST=/path/to/your/denylist.txt python scripts/scan_sensitive.py -
 
 The scanner exits 0 when clean, 1 when it finds something, and 2 on a usage error. It never prints a denylist term in full.
 
-Last updated: 2026-11-27, after the review milestone. The full suite has 621 passing tests, with 0 skipped when the dev extras are installed. The packaging test needs hatchling, which is a dev dependency.
+Last updated: 2026-11-27, after the release milestone. The full suite has 621 passing tests, with 0 skipped when the dev extras are installed. The packaging test needs hatchling, which is a dev dependency.
 
 ## How the tests are set up
 
@@ -161,6 +161,15 @@ These five failure modes count as bugs even if everything else works. Each is pi
 | 4 | Ambiguous options, such as "Yes, I will require sponsorship" and "Yes, I have sponsorship". | The matcher refuses to guess and returns no match with a reason. | `tests/plan/test_options.py::test_ambiguous_returns_none`, `tests/plan/test_options.py::test_never_first_option` |
 | 5 | The person closes the browser window during a hold, or a page crashes. | That job is recorded as `closed_by_user` or `error`, and the run continues with the next job. | `tests/apply/test_runner.py::test_window_closed_continues_next_job`, `tests/apply/test_runner.py::test_page_crash_is_an_error_and_the_run_goes_on` |
 
+## Verified at release
+
+These checks passed for v0.1.0:
+
+1. CI on GitHub passes: the Python 3.11 and 3.12 jobs and the browser-tests job.
+2. A fresh clone in a new virtualenv, installed with `pip install -e ".[dev,browser,llm,mcp]"`, passed ruff, ruff format, mypy (126 files) and 621 tests.
+3. The quick start filled both demo forms.
+4. A fresh install pulls the newest Playwright. Run `playwright install chromium` before the browser tests, or they fail.
+
 ## Known gaps
 
 By design:
@@ -172,7 +181,7 @@ By design:
 5. MCP tests skip when the `mcp` extra is not installed.
 6. Headed hold mode has not run in a real visible window. Tests use a stand-in human in headless Chromium.
 7. The Excel file was checked with openpyxl only, not in Excel, LibreOffice or Numbers.
-8. Feed terms pages need a manual re-check before release.
+8. Feed terms pages need a manual check. v0.1.0 shipped without it.
 9. The Mermaid diagrams in the docs were not render-checked on GitHub.
 
 Open items the wave 1 builders named:

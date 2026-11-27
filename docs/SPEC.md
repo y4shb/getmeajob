@@ -3,7 +3,7 @@
 In short: this file says what getmeajob does, as plain statements you can check.
 Each row has an ID, a status (`planned`, `in progress` or `shipped`) and one behaviour.
 
-Last updated: 2026-11-27, after the review milestone. Every feature is shipped except the GitHub release (REL-1), which is in progress.
+Last updated: 2026-11-27, after the release milestone. Every row is shipped, including the GitHub release (REL-1).
 
 How to read it:
 
@@ -340,7 +340,7 @@ bash scripts/install-git-hooks.sh
 |---|---|---|
 | DOC-1 | shipped | The README gives a quick start and diagrams of the pipeline and the status ladder. Guides exist for sources, ranking, resumes, planning, applying and tracking. |
 | DOC-2 | shipped | The pages `ARCHITECTURE`, `TOKEN_EFFICIENCY`, `RESPONSIBLE_USE`, `SECURITY` and `CONTRIBUTING` exist. |
-| REL-1 | in progress | Pushing a `v*` tag runs a GitHub Actions workflow that builds the wheel and sdist, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut after the reviews pass. |
+| REL-1 | shipped | Pushing a `v*` tag runs a GitHub Actions workflow that builds the wheel and sdist, runs the tests and attaches the files to a GitHub Release. v0.1.0 was released this way, with the wheel and source package attached. |
 
 ## Not in scope
 

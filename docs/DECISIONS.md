@@ -3,7 +3,7 @@
 In short: this file lists every decision made for getmeajob and the reason for it.
 Each row gives the number, the decision, why, what was rejected, who decided (source) and the status.
 
-Last updated: 2026-11-27, after the review milestone (3 code review rounds, 2 security rounds, and the fixes). Entries 1 to 161 all date from that day.
+Last updated: 2026-11-27, after the release milestone (v0.1.0 shipped; earlier: 3 code review rounds, 2 security rounds, and the fixes). Entries 1 to 166 all date from that day.
 
 Words used in the Source and Status columns:
 
@@ -203,6 +203,11 @@ Entries 36 and up come from the build workers' reports and the orchestrator. Bui
 | 159 | `getmeajob agents install` reads the repository name from the package metadata (`Project-URL`, `Repository`). The placeholder owner text is gone. | An installed wheel then prints the real repository. | A placeholder the user must replace. | build worker | decided |
 | 160 | One shared lookup (`JobStore.find`) keeps the "Did you mean" hints. Several unused helpers, aliases and re-exports were deleted. `Settings.offline` stays as a field filled from `fixtures`, and `Ledger.last_status` stays, because tests and the apply code use them. | Fewer duplicate paths, without breaking code that still depends on these. | Deleting them in the same change. | build worker | decided |
 | 161 | Review gates: code review took 3 rounds and ended PASS. Security and privacy review took 2 rounds and ended CLEAN. | The release rule (#135) needs both gates before v0.1.0. | not recorded | orchestrator | decided |
+| 162 | The release workflow (`.github/workflows/release.yml`) runs only on `v*` tags. It checks the tag against the package version, runs lint, types and tests, builds the wheel and sdist, and creates the release with GitHub's own `gh` tool. | Fewer third-party dependencies in CI. | A third-party release action. | orchestrator | decided |
+| 163 | Install hints in code and docs say `pip install -e ".[browser]"` (or `[llm]`, `[mcp]`). | The package is installed from a clone and is not on a package index, so a hint must work as written. | Hints that name a package-index install. | orchestrator | decided |
+| 164 | The quick start exits with an error and a hint when the dry run does not fill both demo forms. | A demo that prints "Done" after failing hides the problem. | not recorded | orchestrator | decided |
+| 165 | CI type-checks without the browser extra, so code that touches Playwright values keeps explicit types. One helper now returns a plain bool. | CI failed once on this. | not recorded | orchestrator | decided |
+| 166 | The README was rewritten for the finished project with the i-have-adhd and humanizer rules. It says that ChatGPT needs a local agent with `AGENTS.md`, because ChatGPT only connects to remote MCP servers. | The README had to match the finished project, and the ChatGPT limit would otherwise surprise readers. | not recorded | orchestrator | decided |
 
 ## Open
 
@@ -230,5 +235,5 @@ Left for later by the build workers:
 5. Ashby education-history fields are reported as a problem by the filler.
 6. Excel and Numbers have not opened the tracker file by hand (see `docs/TESTS.md`).
 7. Headed hold mode has not run in a real visible window.
-8. The feed terms pages need a manual re-check before release.
+8. The feed terms pages need a manual check. v0.1.0 shipped without it.
 9. `docs/RESPONSIBLE_USE.md` names only `apply.exclude`, though apply also honours `exclude_companies`. It is incomplete, not false.
