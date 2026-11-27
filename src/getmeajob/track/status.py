@@ -8,8 +8,8 @@ a person go through `record_by_person` here.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from datetime import UTC, datetime
 
+from getmeajob.files import parse_ts as parse_ts  # moved to files; kept here for callers
 from getmeajob.models import FORWARD_ORDER, AppStatus
 from getmeajob.store import QueueLog, StatusLog
 from getmeajob.workspace import Workspace
@@ -49,13 +49,17 @@ def status_names() -> str:
     return ", ".join(s.value for s in LADDER)
 
 
+def norm_word(text: str) -> str:
+    """Status text spelled like an `AppStatus` value: " Phone-Screen " -> "phone_screen"."""
+    return "_".join(text.strip().casefold().replace("-", " ").split())
+
+
 def parse_status(text: object) -> AppStatus | None:
     """`AppStatus` for text like "Applied", " screening " or "Ghosted"; None if unknown."""
     if text is None:
         return None
-    word = "_".join(str(text).strip().casefold().replace("-", " ").split())
     try:
-        return AppStatus(word)
+        return AppStatus(norm_word(str(text)))
     except ValueError:
         return None
 
@@ -64,7 +68,7 @@ def ladder_index(status: AppStatus) -> int:
     return LADDER.index(status)
 
 
-def counts_in_ladder_order(statuses: Iterable[AppStatus]) -> dict[str, int]:
+def counts_in_ladder_order(statuses: Iterable[AppStatus | str]) -> dict[str, int]:
     """Count per status, every status present (zeros too), in ladder order."""
     counts = {s.value: 0 for s in LADDER}
     for status in statuses:
@@ -76,17 +80,6 @@ def nonzero(counts: Mapping[str, int]) -> str:
     """Counts above zero as one line, in the given order: `shortlisted 2, ready 1`."""
     parts = [f"{name} {n}" for name, n in counts.items() if n]
     return ", ".join(parts) if parts else "none"
-
-
-def parse_ts(text: str) -> datetime | None:
-    """A UTC datetime from an ISO stamp like `2026-11-27T12:16:50Z`; None when unreadable."""
-    if not text:
-        return None
-    try:
-        value = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
-    except ValueError:
-        return None
-    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def day_of(text: str | None) -> str:

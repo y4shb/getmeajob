@@ -14,7 +14,6 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from importlib import resources
-from pathlib import Path
 from typing import Any
 
 import yaml
@@ -22,7 +21,7 @@ import yaml
 from getmeajob.errors import ConfigError
 from getmeajob.models import Job, Question, QuestionType
 from getmeajob.plan.profile import Profile
-from getmeajob.textutil import html_to_text, norm_label, short_hash
+from getmeajob.textutil import html_to_text, norm_label
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import load_yaml
 
@@ -198,14 +197,6 @@ def load_refusal_patterns(ws: Workspace | None) -> list[re.Pattern[str]]:
     patterns = _flatten(_default_data().get("automation_refusal"))
     patterns += _flatten(_user_data(ws).get("automation_refusal"))
     return _compile(patterns, "automation_refusal")
-
-
-def rules_digest(ws: Workspace | None) -> str:
-    """A short hash of the rule files, so a changed rule makes plans run again."""
-    user = ""
-    if ws is not None and ws.user_rules_path.is_file():
-        user = Path(ws.user_rules_path).read_text(encoding="utf-8")
-    return short_hash(default_rules_text() + "\n---\n" + user)
 
 
 # ----------------------------------------------------------------- applying

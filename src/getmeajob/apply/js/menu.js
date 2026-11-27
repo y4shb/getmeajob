@@ -1,4 +1,4 @@
-// Run in the page by getmeajob.apply (widgets.py). Reads the page only.
+// Run in the page by getmeajob.apply (menus.py). Reads the page only.
 (el, pick) => {
   const visible = (n) => {
     if (!n || !n.isConnected || n.hidden) return false;

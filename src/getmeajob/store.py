@@ -112,6 +112,17 @@ class JobStore:
     def get(self, key: str) -> Job | None:
         return self.load().get(key)
 
+    def matching(self, key: str) -> list[Job]:
+        """The job with exactly this key, else every job whose key contains `key` (any case).
+
+        Lets people type part of a key ("1001" for `greenhouse:examplecorp:1001`).
+        """
+        jobs = self.load()
+        if key in jobs:
+            return [jobs[key]]
+        part = key.casefold()
+        return [job for k, job in jobs.items() if part in k.casefold()]
+
     def _save(self, jobs: Mapping[str, Job]) -> None:
         write_jsonl_atomic(self.path, (job.to_dict() for job in jobs.values()))
 

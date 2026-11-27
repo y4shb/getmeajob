@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from getmeajob.files import minute_text, utc_text
 from getmeajob.models import AppStatus, PlanStatus, QueueKind
 from getmeajob.queue.view import counts_by_kind
 from getmeajob.report.rows import open_questions
@@ -109,7 +110,7 @@ def status_digest(ws: Workspace) -> dict[str, Any]:
 def status_lines(digest: dict[str, Any]) -> list[str]:
     """The human screen: short lines, never more than 40."""
     jobs = digest["jobs"]
-    stamp = str(digest["taken_at"]).replace("T", " ").replace("Z", " UTC")
+    stamp = utc_text(str(digest["taken_at"]))
     lines = [
         f"getmeajob status, {stamp}",
         f"jobs: {jobs['found']} found, {jobs['open']} open, {jobs['eligible']} eligible, "
@@ -120,7 +121,7 @@ def status_lines(digest: dict[str, Any]) -> list[str]:
     if run is None:
         lines.append("last source run: none yet")
     else:
-        when = str(run["started"]).replace("T", " ").replace("Z", "")[:16] or run["run_id"]
+        when = minute_text(str(run["started"])) or run["run_id"]
         errors = f", {run['errors']} board error(s)" if run["errors"] else ""
         lines.append(
             f"last source run {when}: {len(run['new'])} new, {len(run['closed'])} closed{errors}"

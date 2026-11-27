@@ -20,7 +20,7 @@ from openpyxl.styles import Font
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from getmeajob.errors import GetmeajobError
-from getmeajob.files import atomic_write_bytes
+from getmeajob.files import atomic_write_bytes, utc_text
 from getmeajob.report.columns import (
     ALL_HEADERS,
     ALL_WIDTHS,
@@ -72,7 +72,7 @@ from getmeajob.report.xlsx_style import (
     wrap_columns,
 )
 from getmeajob.track.snapshot import Snapshot, load_snapshot
-from getmeajob.track.status import GREEN, GREY, LADDER, MEANING
+from getmeajob.track.status import GREEN, GREY, LADDER, MEANING, counts_in_ladder_order
 from getmeajob.workspace import Workspace
 
 __all__ = ["Edit", "XlsxResult", "build_tracker_xlsx", "read_tracker_edits", "write_tracker_xlsx"]
@@ -184,7 +184,7 @@ def _read_me(sheet: Any, snap: Snapshot, rows: list[TrackerRow]) -> None:
     sheet.column_dimensions["C"].width = 16
     sheet.column_dimensions["D"].width = 14
     put(sheet, 1, 1, "getmeajob tracker").font = Font(bold=True, size=14)
-    stamp = snap.taken_at.replace("T", " ").replace("Z", " UTC")
+    stamp = utc_text(snap.taken_at)
     put(sheet, 2, 1, "Exported")
     put(sheet, 2, 2, stamp)
     open_jobs = sum(1 for j in snap.jobs.values() if j.status != "closed")
@@ -193,7 +193,7 @@ def _read_me(sheet: Any, snap: Snapshot, rows: list[TrackerRow]) -> None:
     run = snap.last_run
     put(sheet, 4, 1, "Last source run")
     if run is not None:
-        when = run.started.replace("T", " ").replace("Z", " UTC") or run.run_id
+        when = utc_text(run.started) or run.run_id
         put(sheet, 4, 2, f"{when}: {len(run.new_keys)} new, {len(run.closed_keys)} closed")
     else:
         put(sheet, 4, 2, "none yet (run `getmeajob source`)")
@@ -215,9 +215,7 @@ def _read_me(sheet: Any, snap: Snapshot, rows: list[TrackerRow]) -> None:
     header_row(sheet, ["Status", "Meaning", "Count now", "Count at export"], row=r)
     status_col = column_letter(TRACKER_HEADERS, STATUS)
     last = max(2, len(rows) + 1) + 500  # room for sorting and filtering; counts stay right
-    at_export = {s.value: 0 for s in LADDER}
-    for row in rows:
-        at_export[row.status] = at_export.get(row.status, 0) + 1
+    at_export = counts_in_ladder_order(row.status for row in rows)
     for status in LADDER:
         r += 1
         put(sheet, r, 1, status.value)

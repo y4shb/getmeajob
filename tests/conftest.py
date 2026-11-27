@@ -3,8 +3,10 @@
 - The network is blocked: only 127.0.0.1 and ::1 (and local unix sockets) may be used.
   Use `FixtureTransport` or `httpx.MockTransport` instead.
 - getmeajob environment variables from the developer's shell are cleared.
-- Fixtures: `tmp_ws` (an empty workspace with its folders made, no profile.yaml)
-  and `demo_ws` (a workspace made by `getmeajob init --demo`).
+- Fixtures: `tmp_ws` (an empty workspace with its folders made, no profile.yaml),
+  `demo_ws` (a workspace made by `getmeajob init --demo`), `pipeline_ws` (the demo
+  workspace after `source`, `rank` and `plan`, all offline) and `cli` (runs the CLI on
+  a workspace and returns exit code, stdout and stderr).
 
 Test files may share names across folders (pytest runs with --import-mode=importlib);
 share helpers through fixtures here rather than by importing test modules.
@@ -13,7 +15,7 @@ share helpers through fixtures here rather than by importing test modules.
 from __future__ import annotations
 
 import socket
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,7 @@ import pytest
 from getmeajob.cli import main
 from getmeajob.workspace import Workspace
 
+RunCli = Callable[..., tuple[int, str, str]]
 LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", None}
 OWN_ENV = ("GETMEAJOB_HOME", "GETMEAJOB_FIXTURES", "GETMEAJOB_DENYLIST", "GETMEAJOB_LLM_COMMAND")
 
@@ -93,3 +96,24 @@ def demo_ws(tmp_path: Path) -> Workspace:
     root = tmp_path / "demo"
     assert main(["init", "--demo", "--home", str(root), "--quiet"]) == 0
     return Workspace.resolve(root)
+
+
+@pytest.fixture
+def pipeline_ws(demo_ws: Workspace) -> Workspace:
+    """The demo workspace after `source`, `rank` and `plan` (all offline)."""
+    for command in (["source"], ["rank"], ["plan"]):
+        assert main([*command, "--home", str(demo_ws.root), "--quiet"]) == 0
+    return demo_ws
+
+
+@pytest.fixture
+def cli(capsys: pytest.CaptureFixture[str]) -> RunCli:
+    """`cli(ws, *args)` runs `getmeajob *args --home ws` and returns (code, stdout, stderr)."""
+
+    def run(ws: Workspace, *args: str) -> tuple[int, str, str]:
+        capsys.readouterr()
+        code = main([*args, "--home", str(ws.root)])
+        captured = capsys.readouterr()
+        return code, captured.out, captured.err
+
+    return run

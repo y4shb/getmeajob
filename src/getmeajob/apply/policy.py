@@ -16,7 +16,16 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 from getmeajob.errors import ConfigError, GetmeajobError
-from getmeajob.models import FORWARD_ORDER, ApplyMode, ApplyStatus, AppStatus, LedgerEntry, Plan
+from getmeajob.files import parse_ts
+from getmeajob.models import (
+    FORWARD_ORDER,
+    ApplyMode,
+    ApplyStatus,
+    AppStatus,
+    Job,
+    LedgerEntry,
+    Plan,
+)
 from getmeajob.store import StatusLog
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import get_path, load_yaml
@@ -83,16 +92,11 @@ def load_apply_prefs(ws: Workspace) -> ApplyPrefs:
     )
 
 
-def board_slug(job_key: str) -> str:
-    parts = job_key.split(":")
-    return parts[1] if len(parts) > 2 else ""
-
-
 def excluded_by(plan: Plan, exclude: Iterable[str]) -> str | None:
     """The exclusion entry that matches this job: its key, its board slug, or a part of the
     company name (case does not matter). None when the job is not excluded."""
     company = plan.company.casefold()
-    slug = board_slug(plan.job_key).casefold()
+    slug = Job.board_of(plan.job_key).casefold()
     for entry in exclude:
         want = entry.strip().casefold()
         if want and (want == plan.job_key.casefold() or want == slug or want in company):
@@ -131,13 +135,6 @@ def duplicate_reason(
     return None
 
 
-def _parse_ts(ts: str) -> datetime | None:
-    try:
-        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
 def sent_recently(
     history: Sequence[LedgerEntry], company: str, now: datetime, days: int = CAP_WINDOW_DAYS
 ) -> set[str]:
@@ -147,7 +144,7 @@ def sent_recently(
     for entry in history:
         if entry.status not in SENT or entry.company.casefold() != company.casefold():
             continue
-        when = _parse_ts(entry.ts)
+        when = parse_ts(entry.ts)
         if when is not None and when >= since:
             keys.add(entry.job_key)
     return keys

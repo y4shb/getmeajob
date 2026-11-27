@@ -22,7 +22,7 @@ from getmeajob.models import (
 from getmeajob.plan.plans import all_plans
 from getmeajob.store import HUMAN_SOURCES, JobStore, Ledger, QueueLog
 from getmeajob.track.notes import JobNotes, NotesLog
-from getmeajob.track.status import LADDER, ladder_index
+from getmeajob.track.status import counts_in_ladder_order, ladder_index
 from getmeajob.workspace import Workspace
 
 
@@ -144,10 +144,7 @@ class Snapshot:
         return ""
 
     def counts(self) -> dict[str, int]:
-        counts = {s.value: 0 for s in LADDER}
-        for key in self.jobs:
-            counts[self.status_of(key).value] += 1
-        return counts
+        return counts_in_ladder_order(self.status_of(key) for key in self.jobs)
 
 
 def load_snapshot(ws: Workspace) -> Snapshot:

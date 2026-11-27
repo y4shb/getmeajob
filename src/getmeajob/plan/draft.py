@@ -16,7 +16,6 @@ Token use is estimated (characters / 4) before each call and stops at the budget
 from __future__ import annotations
 
 import hashlib
-import math
 import os
 import re
 import shlex
@@ -32,7 +31,8 @@ from getmeajob.plan.overrides import merge_answers
 from getmeajob.plan.plans import all_plans
 from getmeajob.plan.profile import Profile, load_profile
 from getmeajob.store import JobStore
-from getmeajob.textutil import strip_invisible, truncate
+from getmeajob.textutil import one_line, truncate
+from getmeajob.tokens.estimate import estimate_tokens
 from getmeajob.workspace import Workspace
 
 COMMAND_ENV = "GETMEAJOB_LLM_COMMAND"
@@ -67,11 +67,6 @@ class DraftResult:
 
 class DraftProvider(Protocol):
     def complete(self, prompt: str, max_tokens: int) -> DraftResult: ...
-
-
-def estimate_tokens(text: str) -> int:
-    """A rough estimate: characters divided by four."""
-    return math.ceil(len(text) / 4)
 
 
 class AnthropicProvider:
@@ -203,7 +198,7 @@ def is_draftable(u: UnknownQuestion) -> str | None:
 
 
 def _clean(text: str, n: int) -> str:
-    return truncate(" ".join(strip_invisible(text or "").split()), n)
+    return truncate(one_line(text or ""), n)
 
 
 def _facts(profile: Profile) -> list[str]:

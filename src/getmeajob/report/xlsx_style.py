@@ -15,6 +15,8 @@ from typing import Any
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from getmeajob.textutil import truncate
+
 CELL_MAX = 32_000  # Excel refuses more than 32,767 characters in a cell
 LINK_MAX = 2_000  # Excel breaks on longer hyperlink targets
 HEADER_FILL = PatternFill(start_color="1F3A5F", end_color="1F3A5F", fill_type="solid")
@@ -34,10 +36,7 @@ def fill(color: str) -> PatternFill:
 
 def clean_text(value: str, limit: int = CELL_MAX) -> str:
     """Text a spreadsheet cell can hold: no control characters, at most `limit` chars."""
-    text = _ILLEGAL.sub("", value)
-    if len(text) > limit:
-        text = text[: limit - 1].rstrip() + "…"
-    return text
+    return truncate(_ILLEGAL.sub("", value), limit)
 
 
 def as_day(text: str) -> date | str:
@@ -66,12 +65,6 @@ def put(sheet: Any, row: int, col: int, value: Any) -> Any:
     else:
         cell.value = clean_text(str(value))
         cell.data_type = "s"
-    return cell
-
-
-def put_formula(sheet: Any, row: int, col: int, formula: str) -> Any:
-    cell = sheet.cell(row=row, column=col)
-    cell.value = formula
     return cell
 
 

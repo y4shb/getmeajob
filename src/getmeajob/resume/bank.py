@@ -13,7 +13,7 @@ from typing import Any
 
 from getmeajob.errors import ConfigError
 from getmeajob.workspace import Workspace
-from getmeajob.yamlio import load_yaml
+from getmeajob.yamlio import load_yaml, string_list
 
 
 @dataclass(slots=True)
@@ -104,16 +104,13 @@ def _text(value: Any) -> str:
 
 
 def _list(value: Any, where: str) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value.strip()] if value.strip() else []
-    if isinstance(value, list):
-        return [_text(v) for v in value if _text(v)]
-    raise ConfigError(
-        f"resume/bank.yaml: '{where}' should be a list.",
-        hint="Write it like `[one, two]` or one `- item` per line.",
-    )
+    items = string_list(value)
+    if items is None:
+        raise ConfigError(
+            f"resume/bank.yaml: '{where}' should be a list.",
+            hint="Write it like `[one, two]` or one `- item` per line.",
+        )
+    return items
 
 
 def _bullets(raw: Any, where: str, seen: set[str]) -> list[Bullet]:

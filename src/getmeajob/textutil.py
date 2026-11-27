@@ -124,9 +124,7 @@ def html_to_text(html: str, max_chars: int | None = None) -> str:
     out = "".join(parser.parts)
     if _LEFTOVER_ENTITY.search(out):  # double-escaped entities such as `&amp;nbsp;`
         out = _html.unescape(out)
-    out = strip_invisible(out).replace(" ", " ").replace("\r\n", "\n").replace("\r", "\n")
-    lines = [_SPACES.sub(" ", line).strip() for line in out.split("\n")]
-    out = _MANY_NEWLINES.sub("\n\n", "\n".join(lines)).strip()
+    out = tidy_lines(out)
     if max_chars is not None:
         out = truncate(out, max_chars)
     return out
@@ -135,6 +133,19 @@ def html_to_text(html: str, max_chars: int | None = None) -> str:
 def strip_invisible(text: str) -> str:
     """Remove zero-width characters, bidi controls, soft hyphens and the BOM."""
     return text.translate(_INVISIBLE_TABLE)
+
+
+def one_line(text: str) -> str:
+    """Text on one line: invisible characters gone, every run of whitespace one space."""
+    return " ".join(strip_invisible(text).split())
+
+
+def tidy_lines(text: str) -> str:
+    """Plain text that keeps its lines: invisible characters gone, no-break spaces and
+    runs of spaces made one space, each line trimmed, at most one blank line in a row."""
+    out = strip_invisible(text).replace("\xa0", " ").replace("\r\n", "\n").replace("\r", "\n")
+    lines = [_SPACES.sub(" ", line).strip() for line in out.split("\n")]
+    return _MANY_NEWLINES.sub("\n\n", "\n".join(lines)).strip()
 
 
 def norm_label(text: str) -> str:

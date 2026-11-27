@@ -156,6 +156,12 @@ class Job(Model):
     def make_key(ats: str, board: str, job_id: str) -> str:
         return f"{ats}:{board}:{job_id}"
 
+    @staticmethod
+    def board_of(key: str) -> str:
+        """The board slug inside a key made by `make_key` ("" when it has none)."""
+        parts = key.split(":")
+        return parts[1] if len(parts) > 2 else ""
+
 
 @dataclasses.dataclass(slots=True)
 class Flag(Model):

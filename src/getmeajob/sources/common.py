@@ -10,9 +10,10 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qsl, unquote, urlsplit
 
+from getmeajob.files import parse_ts
 from getmeajob.http import HttpClient, Response
 from getmeajob.models import Board, Job
-from getmeajob.textutil import html_to_text, strip_invisible, truncate
+from getmeajob.textutil import html_to_text, one_line, tidy_lines, truncate
 
 LISTING_TTL = 6 * 3600.0  # board listings
 DISCOVERY_TTL = 7 * 86400.0  # probes and careers pages during discovery
@@ -21,9 +22,6 @@ DETAIL_TTL = 7 * 86400.0  # per-job detail pages (job text rarely changes)
 JD_MAX_CHARS = 20_000
 
 _BAD_IDS = frozenset({"", "none", "null", "undefined", "nan", "n/a"})
-_WS = re.compile(r"\s+")
-_SPACES = re.compile(r"[ \t\f\v]+")
-_MANY_NEWLINES = re.compile(r"\n{3,}")
 _DATE_PREFIX = re.compile(r"^(\d{4}-\d{2}-\d{2})")
 _SLUG_OK = re.compile(r"^[\w][\w .\-]{0,99}$")
 
@@ -102,15 +100,12 @@ def as_int(value: Any) -> int:
 
 def clean_text(value: Any) -> str:
     """One line of text: invisible characters gone, whitespace collapsed."""
-    text = strip_invisible(as_str(value)).replace("\xa0", " ")
-    return _WS.sub(" ", text).strip()
+    return one_line(as_str(value))
 
 
 def clean_block(value: Any) -> str:
     """Plain text that keeps its lines (for job text that already arrives as text)."""
-    text = strip_invisible(as_str(value)).replace("\xa0", " ").replace("\r\n", "\n")
-    lines = [_SPACES.sub(" ", line).strip() for line in text.replace("\r", "\n").split("\n")]
-    return _MANY_NEWLINES.sub("\n\n", "\n".join(lines)).strip()
+    return tidy_lines(as_str(value))
 
 
 def clean_id(value: Any) -> str | None:
@@ -240,11 +235,11 @@ def to_date(value: Any) -> str | None:
         except (OverflowError, OSError, ValueError):
             return None
     text = clean_text(value)
-    try:
-        return datetime.fromisoformat(text.replace("Z", "+00:00")).date().isoformat()
-    except ValueError:
-        match = _DATE_PREFIX.match(text)
-        return match.group(1) if match else None
+    stamp = parse_ts(text)
+    if stamp is not None:
+        return stamp.date().isoformat()
+    match = _DATE_PREFIX.match(text)
+    return match.group(1) if match else None
 
 
 # -------------------------------------------------------------------- URLs

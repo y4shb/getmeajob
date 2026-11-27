@@ -17,13 +17,10 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from getmeajob.errors import ConfigError
-from getmeajob.files import atomic_write_text
 from getmeajob.models import Board
 from getmeajob.workspace import Workspace
-from getmeajob.yamlio import load_yaml
+from getmeajob.yamlio import dump_yaml, load_yaml
 
 _DEFAULT_HEADER = (
     "# Companies to watch. getmeajob reads each company's public job board.\n"
@@ -137,13 +134,7 @@ def _header(path: Path) -> str:
 def save_boards(ws: Workspace, boards: Iterable[Board]) -> None:
     """Rewrite companies.yaml with these boards (the top comment block is kept)."""
     path = ws.companies_path
-    body = yaml.safe_dump(
-        {"companies": [board_entry(b) for b in boards]},
-        sort_keys=False,
-        allow_unicode=True,
-        default_flow_style=False,
-    )
-    atomic_write_text(path, _header(path) + body)
+    dump_yaml(path, {"companies": [board_entry(b) for b in boards]}, header=_header(path))
 
 
 def merge_boards(existing: list[Board], new: Iterable[Board]) -> tuple[list[Board], list[Board]]:

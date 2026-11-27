@@ -1,4 +1,4 @@
-// Run in the page by getmeajob.apply (widgets.py). Reads the page only.
+// Run in the page by getmeajob.apply (menus.py). Reads the page only.
 (el) => {
   for (let node = el, i = 0; node && i < 5; i += 1) {
     node = node.parentElement;

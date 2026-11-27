@@ -13,7 +13,7 @@ from typing import Any
 from getmeajob.errors import GetmeajobError
 from getmeajob.http import USER_AGENT
 from getmeajob.models import Option, Question, QuestionType
-from getmeajob.textutil import short_hash, strip_invisible
+from getmeajob.textutil import one_line, short_hash
 
 # Collects form controls with their label, kind, required flag and options.
 _COLLECT_JS = r"""
@@ -109,7 +109,7 @@ def questions_from_page_fields(raw: Sequence[Any]) -> list[Question]:
     for item in raw:
         if not isinstance(item, Mapping):
             continue
-        label = " ".join(strip_invisible(str(item.get("label") or "")).split())
+        label = one_line(str(item.get("label") or ""))
         required = bool(item.get("required")) or label.endswith("*")
         label = label.rstrip("* ").strip()
         kind = str(item.get("kind") or "")

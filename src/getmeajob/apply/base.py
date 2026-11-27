@@ -6,6 +6,7 @@ a plan into it, and how to click its submit button once.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -78,6 +79,17 @@ def filler_for(ats: str, *, fast: bool = False) -> Filler:
         f"getmeajob cannot fill {ats} forms yet.",
         hint="Only Greenhouse and Ashby forms are supported. Apply to this one by hand.",
     )
+
+
+def click_submit(page: Page, name: re.Pattern[str], fallback: str) -> None:
+    """Click the form's submit button once: the button named like `name`, else the last
+    element matching the `fallback` selector. Raises `SubmitButtonMissing` when neither."""
+    button = page.get_by_role("button", name=name)
+    if button.count() == 0:
+        button = page.locator(fallback)
+    if button.count() == 0:
+        raise SubmitButtonMissing("The form has no submit button getmeajob recognises.")
+    button.last.click()
 
 
 def missing_required(page: Page) -> list[str]:

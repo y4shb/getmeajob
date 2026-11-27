@@ -17,11 +17,11 @@ from getmeajob.apply.values import coerce_date, coerce_number
 
 def by_id(page: Page, field_id: str) -> Locator:
     """The element whose id is exactly `field_id` (ids may hold `[]` and dashes)."""
-    safe = field_id.replace("\\", "\\\\").replace('"', '\\"')
-    return page.locator(f'[id="{safe}"]')
+    return page.locator(f'[id="{quote_attr(field_id)}"]')
 
 
 def quote_attr(value: str) -> str:
+    """`value` escaped for a double-quoted CSS attribute selector."""
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 

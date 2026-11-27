@@ -9,13 +9,12 @@ inputs always give the same files.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from getmeajob.errors import GetmeajobError
-from getmeajob.files import atomic_write_text
+from getmeajob.files import atomic_write_text, write_json_atomic
 from getmeajob.models import Job
 from getmeajob.resume.bank import Bank, Bullet, Education, Role
 from getmeajob.resume.doc import (
@@ -195,7 +194,7 @@ def selected_ids(doc: ResumeDoc) -> list[dict[str, Any]]:
 def write_role_files(path: Path, doc: ResumeDoc, report: dict[str, Any]) -> None:
     atomic_write_text(path / "resume.md", to_markdown(doc))
     atomic_write_text(path / "resume.html", to_html(doc))
-    atomic_write_text(path / "report.json", json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    write_json_atomic(path / "report.json", report)
 
 
 def tailor(

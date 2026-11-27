@@ -7,10 +7,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from getmeajob.files import atomic_write_text
+from getmeajob.files import atomic_write_text, utc_text
 from getmeajob.report.rows import TrackerRow, tracker_rows
+from getmeajob.textutil import truncate
 from getmeajob.track.snapshot import Snapshot, load_snapshot
-from getmeajob.track.status import LADDER, MEANING, nonzero
+from getmeajob.track.status import LADDER, MEANING, counts_in_ladder_order, nonzero
 from getmeajob.workspace import Workspace
 
 CELL_CHARS = 60
@@ -18,7 +19,7 @@ CELL_CHARS = 60
 
 def _cell(text: object) -> str:
     value = " ".join(str(text if text is not None else "").split()).replace("|", "\\|")
-    return value if len(value) <= CELL_CHARS else value[: CELL_CHARS - 1].rstrip() + "…"
+    return truncate(value, CELL_CHARS)
 
 
 def _link(url: str) -> str:
@@ -27,11 +28,8 @@ def _link(url: str) -> str:
 
 def tracker_markdown(snap: Snapshot, rows: list[TrackerRow] | None = None) -> str:
     rows = tracker_rows(snap) if rows is None else rows
-    stamp = snap.taken_at.replace("T", " ").replace("Z", " UTC")
-    counts: dict[str, int] = {}
-    for row in rows:
-        counts[row.status] = counts.get(row.status, 0) + 1
-    ordered = {s.value: counts.get(s.value, 0) for s in LADDER}
+    stamp = utc_text(snap.taken_at)
+    ordered = counts_in_ladder_order(row.status for row in rows)
     lines = [
         "# Job tracker",
         "",

@@ -34,7 +34,7 @@ def _row(result: RankResult, jobs: dict[str, Job]) -> dict[str, Any]:
 def _cmd_rank(args: argparse.Namespace, ctx: Context) -> int:
     ctx.ws.require()
     results = rank_all(ctx.ws, min_score=args.min_score)
-    jobs = {j.key: j for j in JobStore(ctx.ws).all()}
+    jobs = JobStore(ctx.ws).load()
     eligible = [r for r in results if r.eligible]
     shown = results if args.all else eligible
     limit = max(1, args.limit)
@@ -72,11 +72,7 @@ def _cmd_rank(args: argparse.Namespace, ctx: Context) -> int:
 
 def find_job(ctx: Context, key: str) -> Job:
     """The job with this key, or the one job whose key contains `key`."""
-    store = JobStore(ctx.ws)
-    job = store.get(key)
-    if job is not None:
-        return job
-    matches = [j for j in store.all() if key.lower() in j.key.lower()]
+    matches = JobStore(ctx.ws).matching(key)
     if len(matches) == 1:
         return matches[0]
     if matches:

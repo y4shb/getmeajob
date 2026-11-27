@@ -11,7 +11,7 @@ from typing import Any
 
 from getmeajob.errors import ConfigError
 from getmeajob.workspace import Workspace
-from getmeajob.yamlio import load_yaml
+from getmeajob.yamlio import load_yaml, string_list
 
 TIER_KINDS = (
     "remote_worldwide",
@@ -89,16 +89,13 @@ class Preferences:
 
 
 def _strings(value: Any, where: str) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value.strip()] if value.strip() else []
-    if isinstance(value, list | tuple):
-        return [str(v).strip() for v in value if v is not None and str(v).strip()]
-    raise ConfigError(
-        f"preferences.yaml: '{where}' should be a list of words.",
-        hint="Write it like `[one, two]` or as a list with one `- item` per line.",
-    )
+    items = string_list(value)
+    if items is None:
+        raise ConfigError(
+            f"preferences.yaml: '{where}' should be a list of words.",
+            hint="Write it like `[one, two]` or as a list with one `- item` per line.",
+        )
+    return items
 
 
 def _number(value: Any, where: str, default: float) -> float:

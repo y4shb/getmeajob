@@ -14,6 +14,7 @@ import argparse
 from typing import TYPE_CHECKING, Any
 
 from getmeajob.errors import GetmeajobError
+from getmeajob.files import minute_text
 from getmeajob.models import FORWARD_ORDER, AppStatus
 from getmeajob.rank.cli import find_job
 from getmeajob.store import StatusLog
@@ -42,10 +43,6 @@ def _status_arg(text: str) -> AppStatus:
     if status is None:
         raise argparse.ArgumentTypeError(f"unknown status {text!r}; use one of {status_names()}")
     return status
-
-
-def _when(ts: str) -> str:
-    return ts.replace("T", " ").replace("Z", "")[:16]
 
 
 # ----------------------------------------------------------------- set / show
@@ -117,7 +114,7 @@ def _cmd_show(args: argparse.Namespace, ctx: Context) -> int:
     score = data["score"] if data["score"] is not None else "not ranked"
     ctx.out.line(f"status: {data['status']}; score: {score}; plan: {data['plan'] or 'none'}")
     rows = [
-        {**row, "when": _when(str(row["when"])), "note": truncate(str(row["note"]), 50)}
+        {**row, "when": minute_text(str(row["when"])), "note": truncate(str(row["note"]), 50)}
         for row in timeline[-25:]
     ]
     ctx.out.table(rows, ["when", "what", "by", "note"], max_col=0)
@@ -223,7 +220,7 @@ def _cmd_ghost(args: argparse.Namespace, ctx: Context) -> int:
     if not found:
         ctx.out.done(f"No applied or screening job has been quiet for {args.days} days.")
         return 0
-    rows = [{**c.to_dict(), "last_event": _when(c.last_event)} for c in found[: args.limit]]
+    rows = [{**c.to_dict(), "last_event": minute_text(c.last_event)} for c in found[: args.limit]]
     ctx.out.table(rows, ["key", "status", "last_event", "days_quiet"], max_col=0)
     if args.apply:
         ctx.out.done(f"Recorded ghosted for {len(written)} job(s).")

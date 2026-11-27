@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from getmeajob.apply.browser import BrowserSession
 
 FORM_ATS = ("greenhouse", "ashby")
-DEFAULT_HOLD_TIMEOUT = 900.0
 HumanWait = Callable[["Page", float], ApplyStatus]
 Notify = Callable[[str], None]
 

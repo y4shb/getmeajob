@@ -18,15 +18,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-import yaml
-
 from getmeajob.errors import ConfigError
-from getmeajob.files import atomic_write_text
 from getmeajob.models import Job, Question
 from getmeajob.plan.profile import is_blank
 from getmeajob.textutil import norm_label, short_hash
 from getmeajob.workspace import Workspace
-from getmeajob.yamlio import load_yaml
+from getmeajob.yamlio import dump_yaml, load_yaml
 
 SECTIONS = ("global", "by_company", "by_job")
 HEADER = """\
@@ -152,8 +149,7 @@ def merge_answers(ws: Workspace, new: Mapping[str, Any]) -> int:
 
 
 def write_answers(ws: Workspace, data: Mapping[str, Any]) -> None:
-    body = yaml.safe_dump(dict(data), sort_keys=False, allow_unicode=True, width=100)
-    atomic_write_text(ws.answers_path, HEADER + "\n" + body)
+    dump_yaml(ws.answers_path, dict(data), header=HEADER + "\n", width=100)
 
 
 def approve_job(ws: Workspace, job_key: str) -> int:

@@ -9,6 +9,7 @@ and links back to the feed's own page in `Job.url`, as the feeds ask.
 
 from __future__ import annotations
 
+import dataclasses
 import html
 import re
 from collections.abc import Callable, Iterable, Mapping
@@ -35,8 +36,7 @@ from getmeajob.sources.common import (
     to_date,
     truncate_jd,
 )
-from getmeajob.sources.lever import lever_region
-from getmeajob.sources.registry import all_sources
+from getmeajob.sources.discover import board_from_url
 from getmeajob.textutil import html_to_text, truncate
 
 FEED_ATTRIBUTION = {
@@ -257,12 +257,8 @@ FEEDS: dict[str, FeedFn] = {"remotive": remotive, "remoteok": remoteok, "hn": hn
 
 
 def _board_for(url: str, company: str) -> Board | None:
-    for name, source in all_sources().items():
-        slug = source.parse_url(url)
-        if slug:
-            region = lever_region(url) if name == "lever" else None
-            return Board(company=company, ats=name, slug=slug, region=region, verified=False)
-    return None
+    board = board_from_url(url, company)
+    return None if board is None else dataclasses.replace(board, company=company, verified=False)
 
 
 def harvest_boards(jobs: Iterable[Job]) -> list[Board]:

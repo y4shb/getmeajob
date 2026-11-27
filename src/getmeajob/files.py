@@ -24,6 +24,27 @@ def now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def parse_ts(text: str) -> datetime | None:
+    """A UTC datetime from an ISO stamp like `2026-11-27T12:16:50Z`; None when unreadable."""
+    if not text:
+        return None
+    try:
+        value = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
+def utc_text(ts: str) -> str:
+    """An ISO stamp for people: `2026-11-27T14:05:09Z` -> `2026-11-27 14:05:09 UTC`."""
+    return ts.replace("T", " ").replace("Z", " UTC")
+
+
+def minute_text(ts: str) -> str:
+    """An ISO stamp to the minute: `2026-11-27T14:05:09Z` -> `2026-11-27 14:05`."""
+    return ts.replace("T", " ").replace("Z", "")[:16]
+
+
 @contextlib.contextmanager
 def _locked(fh: IO[Any], *, exclusive: bool) -> Iterator[None]:
     """Hold an advisory lock on an open file (POSIX only; a no-op elsewhere)."""

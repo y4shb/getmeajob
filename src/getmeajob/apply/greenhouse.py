@@ -15,7 +15,7 @@ import re
 
 from playwright.sync_api import Page
 
-from getmeajob.apply.base import FillReport, SubmitButtonMissing, missing_required, schema_options
+from getmeajob.apply.base import FillReport, click_submit, missing_required, schema_options
 from getmeajob.apply.values import dial_code, education_rows, employment_rows, local_phone
 from getmeajob.apply.widgets import (
     Matcher,
@@ -26,6 +26,7 @@ from getmeajob.apply.widgets import (
     fill_repeater,
     fill_text,
     location_typeahead,
+    quote_attr,
     react_select,
     upload_file,
 )
@@ -49,7 +50,7 @@ SUBMIT = re.compile(r"^\s*(submit application|submit)\s*$", re.I)
 
 
 def _sel(field_id: str) -> str:
-    return '[id="' + field_id.replace("\\", "\\\\").replace('"', '\\"') + '"]'
+    return f'[id="{quote_attr(field_id)}"]'
 
 
 def _country_matcher(country: str, profile: Profile) -> Matcher:
@@ -156,9 +157,4 @@ class GreenhouseFiller:
         return ashby_choice(page, qid, list(wanted))
 
     def submit(self, page: Page) -> None:
-        button = page.get_by_role("button", name=SUBMIT)
-        if button.count() == 0:
-            button = page.locator("button[type=submit], input[type=submit]")
-        if button.count() == 0:
-            raise SubmitButtonMissing("The form has no submit button getmeajob recognises.")
-        button.last.click()
+        click_submit(page, SUBMIT, "button[type=submit], input[type=submit]")

@@ -56,10 +56,31 @@ def load_yaml(path: Path, *, required: bool = True) -> dict[str, Any]:
     return data
 
 
-def dump_yaml(path: Path, data: Any) -> None:
-    """Write YAML atomically, keeping key order and non-ASCII text as is."""
-    text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True, default_flow_style=False)
-    atomic_write_text(path, text)
+def dump_yaml(path: Path, data: Any, *, header: str = "", width: int | None = None) -> None:
+    """Write YAML atomically, keeping key order and non-ASCII text as is.
+
+    `header` (comment lines, say) goes first, as is. `width` is where long text wraps
+    (PyYAML's default, 80, when None).
+    """
+    text = yaml.safe_dump(
+        data, sort_keys=False, allow_unicode=True, default_flow_style=False, width=width
+    )
+    atomic_write_text(path, header + text)
+
+
+def string_list(value: Any) -> list[str] | None:
+    """A YAML value as a list of trimmed, non-empty strings.
+
+    Nothing gives `[]` and one string a one-item list. Anything else that is not a list
+    gives None, so the caller can say what it expected.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list | tuple):
+        return [str(v).strip() for v in value if v is not None and str(v).strip()]
+    return None
 
 
 def get_path(data: Mapping[str, Any], dotted: str) -> Any | None:

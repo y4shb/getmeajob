@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from getmeajob.files import atomic_write_text
-from getmeajob.models import Plan, PlanStatus, QuestionType
+from getmeajob.models import Job, Plan, PlanStatus, QuestionType
 from getmeajob.plan.plans import all_plans
 from getmeajob.serial import to_jsonable
 from getmeajob.textutil import norm_label, truncate
@@ -104,11 +104,6 @@ def collect_unknowns(ws: Workspace) -> list[UnknownGroup]:
     return _group(all_plans(ws))
 
 
-def _board(job_key: str) -> str:
-    parts = job_key.split(":")
-    return parts[1] if len(parts) >= 3 else ""
-
-
 def _stub_entry(group: UnknownGroup, indent: str) -> list[str]:
     need = "required" if group.required else "optional"
     count = f"{len(group.jobs)} job" + ("s" if len(group.jobs) != 1 else "")
@@ -128,7 +123,7 @@ def write_stub(groups: Sequence[UnknownGroup], path: Path) -> int:
     shared: list[UnknownGroup] = []
     per_company: dict[str, list[UnknownGroup]] = {}
     for group in groups:
-        boards = {_board(k) for k in group.jobs if _board(k)}
+        boards = {Job.board_of(k) for k in group.jobs if Job.board_of(k)}
         if len(boards) == 1:
             per_company.setdefault(boards.pop(), []).append(group)
         else:

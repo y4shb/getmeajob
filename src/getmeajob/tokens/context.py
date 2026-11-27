@@ -21,7 +21,6 @@ from getmeajob.track.snapshot import load_snapshot
 from getmeajob.workspace import Workspace
 from getmeajob.yamlio import load_yaml
 
-MAX_CHARS = 2_000
 BUDGET = 1_900  # leaves room for the line break and a caller's own framing
 LINE_CHARS = 160
 LIST_MAX = 5
@@ -134,10 +133,7 @@ def context_text(pack: dict[str, Any]) -> str:
 
 def find_job_by_key(ws: Workspace, key: str) -> Job:
     """The job with this key, or the one job whose key contains `key` (like the CLI)."""
-    jobs = JobStore(ws).load()
-    if key in jobs:
-        return jobs[key]
-    matches = [job for k, job in jobs.items() if key.casefold() in k.casefold()]
+    matches = JobStore(ws).matching(key)
     if len(matches) == 1:
         return matches[0]
     if matches:

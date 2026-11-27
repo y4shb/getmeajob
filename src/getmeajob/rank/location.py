@@ -41,15 +41,6 @@ _NOISE = re.compile(
 )
 _SPLIT_PLACES = re.compile(r"\s*(?:;|\||\n)\s*")
 
-KIND_LABELS = {
-    "remote_worldwide": "remote worldwide",
-    "remote_home_country": "remote in your region",
-    "hybrid_home_city": "hybrid in your city",
-    "onsite_home_city": "on site in your city",
-    "home_country_other": "elsewhere in your country",
-    "other": "outside your area",
-}
-
 
 @dataclass(slots=True)
 class TierResult:

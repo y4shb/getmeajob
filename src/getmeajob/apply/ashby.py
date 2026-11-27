@@ -15,12 +15,13 @@ import re
 
 from playwright.sync_api import Page
 
-from getmeajob.apply.base import FillReport, SubmitButtonMissing, missing_required
+from getmeajob.apply.base import FillReport, click_submit, missing_required
 from getmeajob.apply.widgets import (
     ashby_boolean,
     ashby_choice,
     fill_text,
     location_typeahead,
+    quote_attr,
     safely,
     upload_file,
 )
@@ -50,7 +51,7 @@ TEXTLIKE = {
 
 
 def _sel(path: str) -> str:
-    safe = path.replace("\\", "\\\\").replace('"', '\\"')
+    safe = quote_attr(path)
     return f'[id="{safe}"], [name="{safe}"]'
 
 
@@ -122,9 +123,4 @@ class AshbyFiller:
         return ashby_choice(page, path, text)
 
     def submit(self, page: Page) -> None:
-        button = page.get_by_role("button", name=SUBMIT)
-        if button.count() == 0:
-            button = page.locator("button[type=submit]")
-        if button.count() == 0:
-            raise SubmitButtonMissing("The form has no submit button getmeajob recognises.")
-        button.last.click()
+        click_submit(page, SUBMIT, "button[type=submit]")

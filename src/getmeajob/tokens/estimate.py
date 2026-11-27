@@ -19,6 +19,7 @@ METHOD = "estimate: characters / 4"
 
 
 def estimate_tokens(text: str) -> int:
+    """A rough estimate: characters divided by four."""
     return math.ceil(len(text) / CHARS_PER_TOKEN)
 
 

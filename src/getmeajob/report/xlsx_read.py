@@ -20,6 +20,7 @@ from openpyxl import load_workbook
 from getmeajob.errors import GetmeajobError
 from getmeajob.textutil import short_hash
 from getmeajob.track.notes import clean_note
+from getmeajob.track.status import norm_word as norm_word  # shared with parse_status
 
 TRACKER_SHEET = "Tracker"
 KEY = "Key"
@@ -50,10 +51,6 @@ def fingerprint(text: str) -> str:
 def sync_value(status: str, notes: str, next_action: str) -> str:
     data = {"status": status, "notes": fingerprint(notes), "next": fingerprint(next_action)}
     return json.dumps(data, separators=(",", ":"))
-
-
-def norm_word(text: str) -> str:
-    return "_".join(text.strip().casefold().replace("-", " ").split())
 
 
 def _norm_header(value: Any) -> str:

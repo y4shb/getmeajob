@@ -13,10 +13,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from getmeajob.files import parse_ts
 from getmeajob.models import AppStatus
 from getmeajob.store import StatusLog
 from getmeajob.track.snapshot import Snapshot
-from getmeajob.track.status import parse_ts
 from getmeajob.workspace import Workspace
 
 GHOST_SOURCE = "ghost"
