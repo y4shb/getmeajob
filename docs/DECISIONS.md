@@ -3,7 +3,7 @@
 In short: this file lists every decision made for getmeajob and the reason for it.
 Each row gives the number, the decision, why, what was rejected, who decided (source) and the status.
 
-Last updated: 2026-11-27, after wave 1 (sources, ranking, resumes, planning). Entries 1 to 106 all date from that day.
+Last updated: 2026-11-27, after wave 2 (applying, queue, tracking, tracker files, token saving) and the license change. Entries 1 to 136 all date from that day.
 
 Words used in the Source and Status columns:
 
@@ -12,7 +12,7 @@ Words used in the Source and Status columns:
 - research: research notes on an earlier private prototype.
 - decided / left out / open: settled, settled as "not building it", or still waiting on an answer.
 
-Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the orchestrator. Build workers add their decisions here after each milestone, each with its reason and the alternative they rejected. To add one:
+Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports and the orchestrator. Build workers add their decisions here after each milestone, each with its reason and the alternative they rejected. To add one:
 
 1. Pick the section that fits best.
 2. Use the next free number. Numbers never change.
@@ -24,11 +24,12 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 |---|---|---|---|---|---|
 | 1 | Everything is named getmeajob: the package, the CLI `getmeajob`, the MCP server `getmeajob` with tools `getmeajob_<verb>`, the Claude Code plugin `getmeajob` (`/getmeajob:<command>`), the skill `getmeajob`, the env prefix `GETMEAJOB_` and the user agent `getmeajob/<version>`. | The owner wants the identity to be getmeajob wherever possible. | An earlier working name. | owner | decided |
 | 12 | The only vendor env var name in the repo is the Anthropic SDK's standard API-key variable. All tool settings use the `GETMEAJOB_` prefix. | The owner's denylist covers private env key names, and the owner allowed this one standard name. | Banning that name too. | owner | decided |
-| 13 | Commits use the owner's own identity, set in the repo-local git config, and the remote `origin` is mapped to the owner's GitHub repository. Agents never push. Public files never contain the owner's name, email or handle. The scanner allows the repo's configured identity in commit metadata only, and CI runs it with `--skip-identity`. | The owner changed the earlier instruction on 2026-11-27 and asked for the remote to be mapped. | The neutral `getmeajob maintainers` identity first planned. | owner | decided |
+| 13 | Commits use the owner's own identity, set in the repo-local git config, and the remote `origin` is mapped to the owner's GitHub repository. Agents never push. The scanner allows the repo's configured identity in commit metadata only, and CI runs it with `--skip-identity`. Where the author's name may appear in public files is set in #136. | The owner changed the earlier instruction on 2026-11-27 and asked for the remote to be mapped. | The neutral `getmeajob maintainers` identity first planned. | owner | decided |
 | 14 | Commit messages carry no co-author or tool trailers. | The owner's standing preference. | none considered | owner | decided |
 | 25 | Claude Code files ship as a plugin named getmeajob, with commands `/getmeajob:<command>`. Flat copies named `getmeajob-<command>.md` serve projects that do not use plugins. | The owner's naming rule and the plugin namespacing convention. | none considered | owner, orchestrator | decided |
 | 34 | The license is Apache-2.0 with a NOTICE file that credits the original author. | The owner wants people to use and change the code while crediting them; the NOTICE file is the standard Apache way to require that credit. | MIT (credit only through the copyright line in copies of the code); a custom license (not a recognised open-source license) | owner | decided |
 | 35 | Final repository name. | not recorded | none considered | owner | open |
+| 136 | The author's name, GitHub username and email appear only in NOTICE, the README credit and clone line, and the package metadata. They appear nowhere in code, tests, examples or other docs. The scanner enforces this with a private allow list (`GETMEAJOB_ALLOW`) and file-scoped rules. Everything else personal stays banned. | The owner ruled that the README may use the real repository URL and credit the author, and that the credit needs a defined, checkable place. | Allowing the name anywhere in public files. | owner | decided |
 
 ## Data, network and tracking
 
@@ -51,6 +52,19 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 | 44 | Automatic sources can never set `rejected`, `withdrawn` or `skipped`. An unknown source counts as automatic. | not recorded (it follows #20). | not recorded | build worker | decided |
 | 45 | Atomic writes create files readable only by the user (mode 0600). | A side effect of the temp-file call. It is a small privacy gain. | not recorded | build worker | decided |
 | 46 | A job that comes back after being marked closed is reopened to `discovered` by sourcing. | not recorded | not recorded | orchestrator | decided |
+| 122 | The Excel Tracker sheet has a hidden "Sync (do not edit)" column per row. It stores what getmeajob last wrote: the status and short hashes of Notes and Next action. Only cells that differ from it count as edits on import. | If you save an old copy of the file, rows you did not touch cannot undo newer changes. | Comparing with the current status, which would revert automatic progress. | build worker | decided |
+| 123 | `getmeajob report` keeps edits you have not imported yet when it rewrites the file. It refuses to overwrite a file it cannot read. | No edit is lost. | Importing during `report`, which would be a hidden write. | build worker | decided |
+| 124 | A hidden "Open queue items" column feeds the yellow row fill. | The colour stays right when you sort, and the visible columns stay exactly as specified. | Fills tied to fixed row ranges; formulas that point at the Queue sheet. | build worker | decided |
+| 125 | The Key column is visible, not hidden. | People need the key to type `getmeajob track set KEY`. | Hiding it, as the plan said. | build worker | decided |
+| 126 | Skipped and ghosted rows are grey, along with the three statuses already listed. | They are dead ends too. | not recorded | build worker | decided |
+| 127 | Notes are an append-only `data/notes.jsonl`. The latest value wins, and an empty cell clears a note. | Same pattern as the other logs, and a second import changes nothing. | not recorded | build worker | decided |
+| 128 | One write path (`record_by_person`) handles every status a person sets. Moving a job to applied or later, or to a dead end, also resolves its open queue items. | Queue items resolve when their cause clears. | Leaving stale items in the queue. | build worker | decided |
+| 129 | The ghost sweep records its events with the source `ghost` and reads status events only. The source list now includes `ghost`. | It is automatic, so the forward-only store rules apply to it. | Reusing the `liveness` source. | build worker | decided |
+| 130 | The Job descriptions sheet covers jobs on the Tracker only. | It keeps the file small. | Every sourced job. | build worker | decided |
+| 131 | `status` and the Questions sheet skip jobs that are already applied or dropped when they list unknown questions. | Otherwise `status` keeps suggesting `plan unknowns` for jobs you are done with. | not recorded | build worker | decided |
+| 132 | `getmeajob tokens estimate` needs no workspace. A relative path is tried from the current folder first, then from the workspace. | It then works on any file. | not recorded | build worker | decided |
+| 133 | `getmeajob queue add` takes any kind (default `manual`), and the `queue` list shows 20 rows by default. | It stays flexible and stays under 40 lines. | not recorded | build worker | decided |
+| 134 | The Read me sheet shows two counts per status: live `COUNTIF` formulas and fixed counts written at export. | An app that does not recalculate on open still shows numbers. | not recorded | build worker | decided |
 
 ## Sourcing and scope
 
@@ -122,6 +136,21 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 | 91 | `getmeajob plan` is one parser that dispatches on its first word. Limitation: `plan K1 --refresh K2` errors, so options go after all keys. | `plan KEY...` and `plan show KEY` cannot both be argparse subparsers. | not recorded | build worker | decided |
 | 92 | Answer stubs: a question asked by one company goes under `by_company.<slug>`, otherwise under `global`. `plan answer` rewrites `answers.yaml` with a fixed header, so old comments in that file are lost. | not recorded | not recorded | build worker | decided |
 | 93 | The AI drafting provider calls the Anthropic SDK's beta messages call with server-side fallback switched on and effort `low`. Drafts are stored with `source: draft`. The budget estimate is prompt characters divided by 4, plus max tokens. | The build worker took these from the SDK's current guidance for the default model and checked the call against the installed SDK. The owner may want to switch the fallback off. | not recorded | build worker, orchestrator | decided (owner may change) |
+| 107 | Dry runs never block later runs. Only these skip as duplicates: a submitted job, a job tracked as `applied` or later, or a last attempt of `awaiting_human`, `captcha`, `account_required` or `automation_refused`. `needs_email_code` blocks dry and submit runs but not hold runs. | Hard stops are never retried, and a job that needs a code is queued for a hold run. | Blocking on any earlier attempt. | build worker | decided |
+| 108 | Skipped jobs are returned to the caller but not written to the ledger. | The ledger records attempts. Skip lines would hide the real last status. | Logging every skip. | build worker | decided |
+| 109 | Hold mode runs headless only when a stand-in human is injected (tests). Real use always opens a visible window. | The human-in-the-window rule holds for real use, and tests can still run. | A hidden headless override. | build worker | decided |
+| 110 | `--mode` defaults to `dry`. | It is the safest choice, and the mode is still named in the command. | Making the flag required. | build worker | decided |
+| 111 | Submit needs opt-in. If no selected job's board is listed in `apply.submit_boards`, the run stops with exit 2. If only some are listed, the others are `skipped_not_ready`. | Jobs on opted-in boards can still go ahead. | Refusing the whole run when only some boards are not opted in. | build worker | decided |
+| 112 | The per-company cap counts distinct jobs per company name with `submitted`, `awaiting_human` or `needs_email_code` in the last 30 days. Dry runs are not capped. `per_company_cap: 0` turns the cap off. | Those are applications that were sent or may have been sent. | not recorded | build worker | decided |
+| 113 | An exclusion matches the board slug, the full job key, or part of the company name. | not recorded | not recorded | build worker | decided |
+| 114 | An error after the Submit click is recorded as `awaiting_human`. | No later run can click Submit twice. | not recorded | build worker | decided |
+| 115 | Hold run details: with fill problems or unreviewed drafts, `--click-submit` does not click, and the person still gets the window. If the person does not finish, a `fill_problem` queue item is added next to the result. A timeout while the code step is showing becomes `needs_email_code`. A real page crash is `error`, not `closed_by_user`. | not recorded | not recorded | build worker | decided |
+| 116 | Employment rows come from `profile.employment[]`, not from the plan. | The form schema has no employment questions. | not recorded | build worker | decided |
+| 117 | The filler never picks "Other" for a school on its own. An unmatched school is a problem only when the field is required. | not recorded | Automatic "Other" pick. | build worker | decided |
+| 118 | The ledger and the queue redact answer values of 4 or more characters. Values that also appear in the job's own public text are left alone. | The ledger must never hold answer text. The demo last name "Example" is part of the company name, so leaving public-text matches alone avoids broken notes. | not recorded | build worker | decided |
+| 119 | With fixtures on, paths in `forms.json` resolve next to that file, then one folder up. A `?variant` query is kept. Browser requests other than `file:` are aborted. | The demo and tests must make no network calls. | not recorded | build worker | decided |
+| 120 | `getmeajob inspect` also needs a workspace. | It reads the fixture settings from there, and the brief said every command needs one. | not recorded | build worker | decided |
+| 121 | On cookie banners the filler clicks only "necessary only" style buttons inside a banner. | not recorded | not recorded | build worker | decided |
 
 ## Build, agents and process
 
@@ -132,7 +161,7 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 | 24 | The MCP server has no tool that fills or submits forms. | Form filling stays a step that a person runs. | none considered | orchestrator | decided |
 | 26 | The package requires `playwright>=1.45`. The dev environment pins 1.62 so it reuses a Chromium build already on the machine. | Avoids a browser download. | none considered | orchestrator | decided |
 | 28 | The build backend is hatchling. `examples/` and `agents/` are included in the wheel. | The demo works after a plain pip install. | none considered | orchestrator | decided |
-| 29 | The private denylist stays outside the repo, at a path the owner chose. The scanner reads it through `GETMEAJOB_DENYLIST`. CI uses generic patterns only. | The list itself is personal. | none considered | owner | decided |
+| 29 | The private denylist stays outside the repo, at a path the owner chose. The scanner reads it through `GETMEAJOB_DENYLIST`. A private allow list (`GETMEAJOB_ALLOW`) names the few places where the author's credit is allowed (see #136). CI uses generic patterns only. | The list itself is personal. | none considered | owner | decided |
 | 30 | The scanner matches env-style denylist terms case-sensitively, as whole tokens. | Avoids false hits on ordinary code words such as `dry_run`. | none considered | orchestrator | decided |
 | 31 | Python 3.11 is the minimum version. CI runs on 3.11 and 3.12. | not recorded | none considered | owner | decided |
 | 94 | `--json`, `-q` and `--home` also work after the command name, through a parser subclass. A subcommand that defines them again fails at startup. | not recorded | not recorded | build worker | decided |
@@ -148,14 +177,14 @@ Entries 36 and up come from the wave 0 and wave 1 build workers' reports and the
 | 104 | The hook installer writes to the repo's own hooks folder, never one set by `core.hooksPath`, and backs up a foreign hook. The pre-commit config uses `language: python`. | `python` always exists. | not recorded | build worker | decided |
 | 105 | The test socket guard also blocks DNS lookups, raises an error httpx does not retry, and clears `GETMEAJOB_*` env vars during tests. | A swallowed error would turn into silent retries. | not recorded | build worker | decided |
 | 106 | The private denylist matches ALL-CAPS terms case-sensitively, and all denylist terms are checked in one combined pass. | not recorded | not recorded | orchestrator | decided |
+| 135 | Releases: a GitHub Actions workflow builds the wheel and sdist when a `v*` tag is pushed, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut only after the review gates pass. GitHub Packages is not used. PyPI publishing waits until the repo is public and the owner has a PyPI account. | Pinned, tested, installable snapshots with release notes. GitHub Packages has no Python registry. | Publishing to GitHub Packages; publishing to PyPI now. | owner | decided |
 
 ## Open
 
 Waiting on the owner:
 
 1. Final repository name (#35). The reason is not recorded because the decision is not made yet.
-2. Copyright line (#34). It stays "getmeajob contributors" until the owner picks a name.
-3. Reason for the Python 3.11 minimum (#31) is not recorded.
+2. Reason for the Python 3.11 minimum (#31) is not recorded.
 
 Decided, but the owner may still change them:
 
@@ -164,10 +193,13 @@ Decided, but the owner may still change them:
 
 Reason not recorded (build workers gave none):
 
-Rows #36, #39, #40, #42, #44, #46, #51, #53, #55, #56, #57, #58, #62, #68, #72, #74, #75, #83, #85, #90, #92, #94, #95, #96, #101, #102, #106. Ask the worker or the owner if any of these matter.
+Rows #36, #39, #40, #42, #44, #46, #51, #53, #55, #56, #57, #58, #62, #68, #72, #74, #75, #83, #85, #90, #92, #94, #95, #96, #101, #102, #106, #113, #115, #121. Ask the worker or the owner if any of these matter.
 
 Left for later by the build workers:
 
 1. Mapping the portals filters into preferences needs a ruling (see the `import-portals` row).
 2. There is no "willing to relocate" field in the preferences, so an on-site job elsewhere scores 0 on location and is not made ineligible.
 3. Ashby internal-posting detection is not built.
+4. There is no `--retry` for jobs held as waiting for the human (apply).
+5. Ashby education-history fields are reported as a problem by the filler.
+6. Excel and Numbers have not opened the tracker file by hand (see `docs/TESTS.md`).

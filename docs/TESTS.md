@@ -32,7 +32,7 @@ GETMEAJOB_DENYLIST=/path/to/your/denylist.txt python scripts/scan_sensitive.py -
 
 The scanner exits 0 when clean, 1 when it finds something, and 2 on a usage error. It never prints a denylist term in full.
 
-Last updated: 2026-11-27, after wave 1. The full suite has 409 passing tests.
+Last updated: 2026-11-27, after wave 2 (applying, queue, tracking, tracker files, token saving). The full suite has 517 passing tests.
 
 ## How the tests are set up
 
@@ -112,32 +112,39 @@ All in `tests/sources/`, with recorded files in `tests/sources/fixtures/`.
 
 ### Wave 2: applying
 
+Browser suites need Chromium and run under `pytest -m browser`.
+
 | Suite | What it proves | SPEC area (rows) | Status |
 |---|---|---|---|
-| `tests/apply/test_greenhouse_fill.py` (browser) | A dry run fills every field and never clicks submit, a type-ahead select with no match is a problem, the education repeater fills, and location type-ahead needs a match. | Applying (APP-2, APP-8) | planned |
-| `tests/apply/test_ashby_fill.py` (browser) | A dry run fills booleans, choices, location and number fields. | Applying (APP-2, APP-8) | planned |
-| `tests/apply/test_guards.py` (browser) | The CAPTCHA variant stops and queues, and the account and no-automation variants stop. | Applying (APP-5, APP-6, APP-7, APP-15) | planned |
-| `tests/apply/test_runner.py` (browser) | A second run skips, the per-company cap and exclusion list hold, the hold code flow works with a stand-in human, a closed window moves on to the next job, and submit is refused without opt-in or with an unreviewed draft. | Applying (APP-3, APP-4, APP-9, APP-10, APP-11) | planned |
-| `tests/apply/` (file not named yet) `test_ledger_has_no_answer_text` | The ledger never contains answer text. Runs without a browser. | Applying (APP-12) | planned |
+| `tests/apply/test_greenhouse_fill.py` (browser) | A dry run fills every field and never clicks submit, a type-ahead select with no match is a problem, the education repeater fills, and location type-ahead needs a match. | Applying (APP-2, APP-8) | passing |
+| `tests/apply/test_ashby_fill.py` (browser) | A dry run fills booleans, choices, location and number fields, and a yes/no or choice field with no clear match is not guessed. | Applying (APP-2, APP-8) | passing |
+| `tests/apply/test_guards.py` (browser) | The CAPTCHA variant stops and queues, the account and no-automation variants stop, the detectors stay quiet on plain forms, and error, success and code pages are read. | Applying (APP-5, APP-6, APP-7, APP-15) | passing |
+| `tests/apply/test_runner.py` (browser) | A second run skips, the per-company cap and exclusion list hold, the hold code flow works with a stand-in human, a closed window or a page crash moves on to the next job, and submit is refused without opt-in or with an unreviewed draft. An error after the click never clicks twice. | Applying (APP-3, APP-4, APP-9, APP-10, APP-11) | passing |
+| `tests/apply/test_ledger.py` | The ledger and queue never contain answer text. The answers digest changes only when answers change. A good dry run resolves a fill-problem item. Runs without a browser. | Applying (APP-12) | passing |
+| `tests/apply/test_policy.py` | Preference defaults and errors, exclusion matching, duplicate and waiting-job rules, the 30-day cap and the not-ready rules. | Applying (APP-4, APP-9, APP-10) | passing |
+| `tests/apply/test_values.py` | Number, date and phone values are coerced, employment rows come from the profile, the degree is matched by level, and the location pick is never the first suggestion by default. | Applying (APP-8) | passing |
+| `tests/apply/test_cli.py` | Missing workspace gives the friendly error, submit is refused, hold needs a window, a missing Playwright gives a hint, and `inspect` lists fields and options. | Applying (APP-4, APP-14); Setup and workspace (SET-6) | passing |
 
 ### Wave 2: queue, tracker and token saving
 
 | Suite | What it proves | SPEC area (rows) | Status |
 |---|---|---|---|
-| `tests/report/test_xlsx.py` | Sheets, columns, the status drop-down and links are present, and importing the same edits twice records each change once. | Excel and Markdown tracker (XLS-2 to XLS-5, XLS-7, XLS-8) | planned |
-| `tests/report/test_md.py` | The Markdown tracker is written. | Excel and Markdown tracker (XLS-9) | planned |
-| `tests/track/test_track_cli.py` | A manual status can go backward, stats counts are right, and ghosting waits for the set number of days. | Queue and tracking (TRK-6, TRK-9, TRK-10) | planned |
-| `tests/queue/test_queue_cli.py` | The `getmeajob queue` commands work (test names not set yet). | Queue and tracking (TRK-1, TRK-4) | planned |
-| `tests/tokens/test_status.py` | `getmeajob status` fits in 40 lines. | Token saving (TOK-1) | planned |
-| `tests/tokens/test_context.py` | `getmeajob context` stays under 2,000 characters. | Token saving (TOK-2) | planned |
-| `tests/tokens/test_estimate.py` | `getmeajob tokens estimate` reports characters divided by 4. | Token saving (TOK-3) | planned |
+| `tests/report/test_xlsx.py` | Sheets, columns, the status drop-down and links are present. Importing the same edits twice records each change once. A rewrite keeps edits not yet imported, and an old copy cannot undo newer changes. Unknown statuses are reported, not recorded. Text never becomes a formula, a long description is capped, and an unreadable file is never overwritten. | Excel and Markdown tracker (XLS-2 to XLS-8) | passing |
+| `tests/report/test_md.py` | The Markdown tracker groups jobs by status in ladder order, stays short on the demo, escapes cells and handles an empty workspace. | Excel and Markdown tracker (XLS-9) | passing |
+| `tests/track/test_track_cli.py` | A manual status can go backward, setting the same status writes nothing, stats counts are right, ghosting waits for the set number of days, and setting applied resolves open queue items. | Queue and tracking (TRK-6, TRK-7, TRK-9, TRK-10) | passing |
+| `tests/track/test_notes.py` | The same note value writes nothing, and clearing a note is recorded. | Excel and Markdown tracker (XLS-7, XLS-8) | passing |
+| `tests/queue/test_queue_cli.py` | Every kind has a "what we need" line, groups follow a fixed order, add and resolve work, and an empty queue says so. | Queue and tracking (TRK-1, TRK-2, TRK-3, TRK-4) | passing |
+| `tests/tokens/test_status.py` | `getmeajob status` fits in 40 lines and gives the next command, including on an empty workspace. | Token saving (TOK-1) | passing |
+| `tests/tokens/test_context.py` | `getmeajob context` stays under 2,000 characters, even for a messy job. | Token saving (TOK-2) | passing |
+| `tests/tokens/test_estimate.py` | `getmeajob tokens estimate` reports characters divided by 4, works without a workspace, and gives a friendly error for a missing file. | Token saving (TOK-3) | passing |
 
 ### Wave 2: agents and MCP
 
 | Suite | What it proves | SPEC area (rows) | Status |
 |---|---|---|---|
-| `tests/agents/test_assets.py` | Every command file has a `description` in its frontmatter, refers only to real CLI commands, and contains no forbidden words. | Agents and MCP (AGT-10) | planned |
-| `tests/mcp/test_server.py` | Tools carry the `getmeajob_` prefix, and `getmeajob_status` on the demo returns under 2,000 characters. Skipped when the `mcp` extra is missing. | Agents and MCP (AGT-6, AGT-8) | planned |
+| `tests/agents/test_assets.py` | Every command file has a `description` in its frontmatter, refers only to real CLI commands, and contains no forbidden words. | Agents and MCP (AGT-10) | in progress |
+| `tests/mcp/test_server.py` | Tools carry the `getmeajob_` prefix, and `getmeajob_status` on the demo returns under 2,000 characters. Skipped when the `mcp` extra is missing. | Agents and MCP (AGT-6, AGT-8) | in progress |
+| `tests/quickstart/` (not named yet) | `bash scripts/quickstart.sh` runs the README quick start on the demo workspace. | Setup and workspace (SET-14) | planned |
 
 ## Review focus
 
@@ -149,7 +156,7 @@ These five failure modes count as bugs even if everything else works. Each is pi
 | 2 | Running a command twice. | `source` gives no duplicates and an empty diff, `plan` reuses the cached plan, `apply` skips by job key, and `track import-xlsx` writes no duplicate events. | `tests/sources/test_pipeline.py::test_second_run_is_empty_diff`, `tests/plan/test_planner.py::test_second_plan_run_uses_cache`, `tests/apply/test_runner.py::test_idempotent_second_run_skips`, `tests/report/test_xlsx.py::test_roundtrip_import_records_changes_once` |
 | 3 | First run on an empty or missing workspace. | Every command prints a friendly message pointing to `getmeajob init`, exits with code 2, and shows no traceback. | `tests/core/test_cli.py::test_unknown_workspace_friendly_error`, `tests/core/test_workspace.py::test_require_missing_raises_with_hint`, and `test_missing_workspace_friendly` in the CLI test of each wave 1 package (`tests/sources/test_cli.py`, `tests/rank/test_cli.py`, `tests/resume/test_cli.py`, `tests/plan/test_cli.py`) |
 | 4 | Ambiguous options, such as "Yes, I will require sponsorship" and "Yes, I have sponsorship". | The matcher refuses to guess and returns no match with a reason. | `tests/plan/test_options.py::test_ambiguous_returns_none`, `tests/plan/test_options.py::test_never_first_option` |
-| 5 | The person closes the browser window during a hold, or a page crashes. | That job is recorded as `closed_by_user` or `error`, and the run continues with the next job. | `tests/apply/test_runner.py::test_window_closed_continues_next_job` |
+| 5 | The person closes the browser window during a hold, or a page crashes. | That job is recorded as `closed_by_user` or `error`, and the run continues with the next job. | `tests/apply/test_runner.py::test_window_closed_continues_next_job`, `tests/apply/test_runner.py::test_page_crash_is_an_error_and_the_run_goes_on` |
 
 ## Known gaps
 
@@ -168,22 +175,29 @@ Open items the wave 1 builders named:
 3. The rendered-page Ashby reader is only unit-tested (its parser). It has not run against a real page.
 4. `plan K1 --refresh K2` errors by design, and no test covers that limit.
 
+Open items the wave 2 builders named:
+
+1. Headed hold mode has not been checked in a real window. The tests use a stand-in human in headless Chromium.
+2. The Excel file was checked with openpyxl only. It has not been opened in Excel, LibreOffice or Numbers.
+3. Ashby education-history fields are reported as a problem, and no test covers a fix.
+4. There is no retry option for jobs waiting on the human, so no test exists for one.
+
 Not yet covered by the plan:
 
-1. `test_ledger_has_no_answer_text` has no file yet.
-2. Test names are not set for `tests/queue/test_queue_cli.py`, `tests/tokens/test_estimate.py` and `tests/report/test_md.py`.
-3. Some SPEC rows have no planned test yet. Some of these get checked by hand or by CI. The wave 1 rows were not fully re-audited, so treat this table as a floor.
+1. Test names are not set for the agents, MCP and quickstart suites.
+2. Some SPEC rows have no planned test yet. Some of these get checked by hand or by CI. The wave 1 rows were not fully re-audited, so treat this table as a floor.
 
 | SPEC area | Rows with no planned test |
 |---|---|
-| Setup and workspace | SET-1, SET-3, SET-5, SET-8, SET-9, SET-10, SET-14 |
+| Setup and workspace | SET-1, SET-3, SET-5, SET-8, SET-9, SET-10, SET-14, SET-15 |
 | Sourcing | SRC-10 |
 | Ranking | none known |
 | Planning answers | ANS-17 |
-| Applying | APP-1, APP-13, APP-14 |
-| Queue and tracking | TRK-2, TRK-5 |
+| Applying | APP-1, APP-13 |
+| Queue and tracking | TRK-5, TRK-7, TRK-8 |
 | Excel and Markdown tracker | XLS-1, XLS-6 |
 | Resumes per role | RES-3 |
 | Token saving | TOK-4, TOK-5 |
 | Agents and MCP | AGT-1, AGT-2, AGT-3, AGT-4, AGT-5, AGT-7, AGT-9 |
-| Privacy guardrails | PRV-1, PRV-2, PRV-7, PRV-8, PRV-9, PRV-10 |
+| Docs and releases | DOC-1, DOC-2, REL-1 |
+| Privacy guardrails | PRV-1, PRV-2, PRV-7, PRV-8, PRV-9, PRV-10, PRV-11 |

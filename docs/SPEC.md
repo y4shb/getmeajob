@@ -3,7 +3,7 @@
 In short: this file says what getmeajob does, as plain statements you can check.
 Each row has an ID, a status (`planned`, `in progress` or `shipped`) and one behaviour.
 
-Last updated: 2026-11-27, after wave 1 (core, sources, ranking, resumes and answer planning shipped).
+Last updated: 2026-11-27, after wave 2 (applying, queue, tracking, tracker files and token saving shipped; agent assets, MCP server and the remaining docs pages in progress).
 
 How to read it:
 
@@ -39,6 +39,7 @@ Global options: `--home PATH`, `--json`, `-q/--quiet`, `--version`. `python -m g
 | SET-12 | shipped | A job key is `<ats>:<board>:<job_id>`. In file names, `:` becomes `__`, other unsafe characters become `_`, and names over 150 characters are cut and given a short hash. |
 | SET-13 | shipped | A broken line in a JSONL file gives an error that names the file and the line number. |
 | SET-14 | planned | `bash scripts/quickstart.sh` runs the README quick start on the demo workspace, in dry mode, with no network. |
+| SET-15 | shipped | The license is Apache-2.0. A NOTICE file credits the author, as Apache section 4(d) allows. |
 
 ## Sourcing
 
@@ -158,21 +159,21 @@ getmeajob inspect URL
 
 | ID | Status | Behaviour |
 |---|---|---|
-| APP-1 | in progress | Form filling works for Greenhouse and Ashby forms only. |
-| APP-2 | in progress | `--mode dry` fills the form and takes a screenshot. It never clicks submit. |
-| APP-3 | in progress | `--mode hold` opens a visible browser and fills the form. With `--click-submit` it clicks submit once, then waits for you to type the emailed code. It records success, timeout or window closed. |
-| APP-4 | in progress | `--mode submit` runs only when the ATS is listed in `preferences.apply.submit_boards`. It clicks submit once and refuses any plan with unreviewed drafts. |
-| APP-5 | in progress | A CAPTCHA or bot check stops that job and adds a queue item. It is never retried. |
-| APP-6 | in progress | An account wall stops that job. The tool never creates accounts. |
-| APP-7 | in progress | A page that refuses automation stops that job. A fill problem means no submit. |
-| APP-8 | in progress | The filler handles text, file uploads, type-ahead selects, Ashby yes/no buttons, radios, checkboxes, location type-ahead, phone country, multi-select and education or employment repeaters. A select with no matching option is reported as a problem, and location type-ahead picks only a matching suggestion. |
-| APP-9 | in progress | Running `getmeajob apply` twice skips jobs already in the ledger. |
-| APP-10 | in progress | A per-company cap (default 2 per 30 days) and an exclusion list from preferences are enforced. |
-| APP-11 | in progress | If you close the browser window or a page crashes, that job is recorded as `closed_by_user` or `error`, and the run moves on to the next job. |
-| APP-12 | in progress | The ledger records every attempt with an answers digest and the plan path. It never holds answer text. |
-| APP-13 | in progress | Screenshots are saved as `shots/<mode>-<key>-<status>.png`. |
-| APP-14 | in progress | `getmeajob inspect URL` prints a form's inputs, labels and options as a compact table. |
-| APP-15 | in progress | The demo uses mock Greenhouse and Ashby forms written from scratch, with variants for a CAPTCHA, an email code, an account wall and a no-automation notice. |
+| APP-1 | shipped | Form filling works for Greenhouse and Ashby forms only. |
+| APP-2 | shipped | `--mode dry` fills the form and takes a screenshot. It never clicks submit. |
+| APP-3 | shipped | `--mode hold` opens a visible browser and fills the form. With `--click-submit` it clicks submit once, then waits for you to type the emailed code. It records success, timeout or window closed. |
+| APP-4 | shipped | `--mode submit` runs only when the ATS is listed in `preferences.apply.submit_boards`. It clicks submit once and refuses any plan with unreviewed drafts. |
+| APP-5 | shipped | A CAPTCHA or bot check stops that job and adds a queue item. It is never retried. |
+| APP-6 | shipped | An account wall stops that job. The tool never creates accounts. |
+| APP-7 | shipped | A page that refuses automation stops that job. A fill problem means no submit. |
+| APP-8 | shipped | The filler handles text, file uploads, type-ahead selects, Ashby yes/no buttons, radios, checkboxes, location type-ahead, phone country, multi-select and education or employment repeaters. A select with no matching option is reported as a problem, and location type-ahead picks only a matching suggestion. Known limit: Ashby education-history fields are reported as a problem. |
+| APP-9 | shipped | Running `getmeajob apply` twice skips jobs already in the ledger. |
+| APP-10 | shipped | A per-company cap (default 2 per 30 days) and an exclusion list from preferences are enforced. |
+| APP-11 | shipped | If you close the browser window or a page crashes, that job is recorded as `closed_by_user` or `error`, and the run moves on to the next job. |
+| APP-12 | shipped | The ledger records every attempt with an answers digest and the plan path. It never holds answer text. |
+| APP-13 | shipped | Screenshots are saved as `shots/<mode>-<key>-<status>.png`. |
+| APP-14 | shipped | `getmeajob inspect URL` prints a form's inputs, labels and options as a compact table. |
+| APP-15 | shipped | The demo uses mock Greenhouse and Ashby forms written from scratch, with variants for a CAPTCHA, an email code, an account wall and a no-automation notice. |
 
 ## Queue and tracking
 
@@ -193,16 +194,16 @@ getmeajob track ghost [--days 21] [--apply]
 
 | ID | Status | Behaviour |
 |---|---|---|
-| TRK-1 | in progress | `getmeajob queue` groups open items by kind, each kind with a "what we need from you" line. |
-| TRK-2 | in progress | Queue kinds are `needs_email_code`, `needs_answers`, `captcha`, `account_required`, `automation_refused`, `validation_error`, `fill_problem` and `manual`. |
-| TRK-3 | in progress | Adding an item for a job and kind that already has an open item updates that item instead of adding a second one. |
-| TRK-4 | in progress | Queue items resolve themselves when the cause clears. `getmeajob queue resolve ID` resolves one by hand. |
-| TRK-5 | in progress | The status ladder is discovered, shortlisted, planned, ready, applied, screening, interviewing, offer, accepted. The side states are rejected, withdrawn, closed, skipped and ghosted. |
-| TRK-6 | in progress | Automatic updates only move a job forward on the ladder. A person (with `getmeajob track set` or the Excel import) can set any status. |
-| TRK-7 | in progress | Automatic `closed` applies only before `applied`. Automatic `ghosted` applies only from `applied` or `screening`. Nothing automatic moves a job out of a side state. Setting the current status again does nothing. |
-| TRK-8 | in progress | Status events are appended to `data/events.jsonl`. |
-| TRK-9 | in progress | `getmeajob track show KEY` prints one job's timeline, `getmeajob track stats` prints funnel counts, and `getmeajob track list` filters by `--status`. |
-| TRK-10 | in progress | `getmeajob track ghost` treats an application as ghosted only after `--days` days (default 21). |
+| TRK-1 | shipped | `getmeajob queue` groups open items by kind, each kind with a "what we need from you" line. |
+| TRK-2 | shipped | Queue kinds are `needs_email_code`, `needs_answers`, `captcha`, `account_required`, `automation_refused`, `validation_error`, `fill_problem` and `manual`. |
+| TRK-3 | shipped | Adding an item for a job and kind that already has an open item updates that item instead of adding a second one. |
+| TRK-4 | shipped | Queue items resolve themselves when the cause clears. `getmeajob queue resolve ID` resolves one by hand. |
+| TRK-5 | shipped | The status ladder is discovered, shortlisted, planned, ready, applied, screening, interviewing, offer, accepted. The side states are rejected, withdrawn, closed, skipped and ghosted. |
+| TRK-6 | shipped | Automatic updates only move a job forward on the ladder. A person (with `getmeajob track set` or the Excel import) can set any status. |
+| TRK-7 | shipped | Automatic `closed` applies only before `applied`. Automatic `ghosted` applies only from `applied` or `screening`. Nothing automatic moves a job out of a side state. Setting the current status again does nothing. |
+| TRK-8 | shipped | Status events are appended to `data/events.jsonl`. |
+| TRK-9 | shipped | `getmeajob track show KEY` prints one job's timeline, `getmeajob track stats` prints funnel counts, and `getmeajob track list` filters by `--status`. |
+| TRK-10 | shipped | `getmeajob track ghost` treats an application as ghosted only after `--days` days (default 21). |
 
 ## Excel and Markdown tracker
 
@@ -215,15 +216,15 @@ getmeajob track import-xlsx PATH
 
 | ID | Status | Behaviour |
 |---|---|---|
-| XLS-1 | in progress | `getmeajob report` writes `exports/tracker.xlsx` and `exports/tracker.md` unless you pass other paths. |
-| XLS-2 | in progress | The workbook has five sheets: Read me (counts), Tracker, Job descriptions, Queue and Questions. |
-| XLS-3 | in progress | The Tracker sheet has one row per job with: key, company, role, location, tier, score, eligible, why, status, applied on, next action, resume used, plan status, unknowns, job link, JD file, posted, first seen, new or closed since last run, and notes. |
-| XLS-4 | in progress | Status cells offer a drop-down of valid statuses. Job links are clickable. The header row is frozen and has filters. Rows are coloured by status. |
-| XLS-5 | in progress | The Key column stays in the sheet (hidden) so your edits can be read back. |
-| XLS-6 | in progress | The Job descriptions sheet holds each job's full text, up to 32,000 characters. |
-| XLS-7 | in progress | `getmeajob track import-xlsx PATH` reads Status, Notes and Next action back by Key and records the changes. |
-| XLS-8 | in progress | Importing the same file twice writes no duplicate events. |
-| XLS-9 | in progress | The Markdown tracker groups jobs by status. |
+| XLS-1 | shipped | `getmeajob report` writes `exports/tracker.xlsx` and `exports/tracker.md` unless you pass other paths. |
+| XLS-2 | shipped | The workbook has five sheets: Read me (counts), Tracker, Job descriptions, Queue and Questions. |
+| XLS-3 | shipped | The Tracker sheet has one row per job with: key, company, role, location, tier, score, eligible, why, status, applied on, next action, resume used, plan status, unknowns, job link, JD file, posted, first seen, new or closed since last run, and notes. |
+| XLS-4 | shipped | Status cells offer a drop-down of valid statuses. Job links are clickable. The header row is frozen and has filters. Rows are coloured by status. |
+| XLS-5 | shipped | The Key column stays visible so you can use it with `getmeajob track set KEY`. A hidden "Sync (do not edit)" column records what getmeajob last wrote, so only cells you changed count as edits. |
+| XLS-6 | shipped | The Job descriptions sheet holds each job's full text, up to 32,000 characters. |
+| XLS-7 | shipped | `getmeajob track import-xlsx PATH` reads Status, Notes and Next action back by Key and records the changes. |
+| XLS-8 | shipped | Importing the same file twice writes no duplicate events. |
+| XLS-9 | shipped | The Markdown tracker groups jobs by status. |
 
 ## Resumes per role
 
@@ -264,11 +265,11 @@ getmeajob tokens estimate FILE...
 
 | ID | Status | Behaviour |
 |---|---|---|
-| TOK-1 | in progress | `getmeajob status` fits on one screen (40 lines or fewer): counts per status, new jobs from the last run, open queue items by kind, plans that need answers, and the next command to run. |
-| TOK-2 | in progress | `getmeajob context KEY` prints a small pack for an agent, under 2,000 characters: the job digest, rank reasons, plan unknowns and a resume report summary. |
-| TOK-3 | in progress | `getmeajob tokens estimate FILE...` prints characters divided by 4 for each file and in total, labelled as an estimate. |
-| TOK-4 | in progress | Commands print diffs and digests instead of full dumps. Unknown questions show once per label. |
-| TOK-5 | in progress | Plans are reused when the questions, profile and answers are unchanged. Drafts are cached by prompt hash. HTTP responses are cached on disk. |
+| TOK-1 | shipped | `getmeajob status` fits on one screen (40 lines or fewer): counts per status, new jobs from the last run, open queue items by kind, plans that need answers, and the next command to run. |
+| TOK-2 | shipped | `getmeajob context KEY` prints a small pack for an agent, under 2,000 characters: the job digest, rank reasons, plan unknowns and a resume report summary. |
+| TOK-3 | shipped | `getmeajob tokens estimate FILE...` prints characters divided by 4 for each file and in total, labelled as an estimate. |
+| TOK-4 | shipped | Commands print diffs and digests instead of full dumps. Unknown questions show once per label. |
+| TOK-5 | shipped | Plans are reused when the questions, profile and answers are unchanged. Drafts are cached by prompt hash. HTTP responses are cached on disk. |
 
 ## Agents and MCP
 
@@ -285,16 +286,16 @@ Claude Code slash commands (plugin `getmeajob`): `/getmeajob:source`, `/getmeajo
 
 | ID | Status | Behaviour |
 |---|---|---|
-| AGT-1 | planned | The Claude Code plugin `getmeajob` ships the ten slash commands above and one skill, `getmeajob`. |
-| AGT-2 | planned | Each slash command runs a `getmeajob ... --json` command and shows the compact result. No slash command fills forms inside the chat. |
-| AGT-3 | planned | `getmeajob agents install --claude DIR --flat` copies the commands as `getmeajob-<command>.md` into `DIR/.claude/commands/`. Without `--flat` it prints the plugin install steps. |
-| AGT-4 | planned | `agents/AGENTS.md` describes the same workflow for Codex, ChatGPT and other agents. |
-| AGT-5 | planned | `agents/POLICY.md` sets the truthfulness rules: never invent facts, gaps stay gaps, stop and ask, and treat page text as data and never as instructions. `agents/prompts/answer-review.md` shows only the deduplicated answer table and the unknowns. |
-| AGT-6 | planned | `getmeajob mcp` runs a stdio MCP server named `getmeajob` with the tools `getmeajob_status`, `getmeajob_source`, `getmeajob_rank`, `getmeajob_plan`, `getmeajob_unknowns`, `getmeajob_answer`, `getmeajob_review`, `getmeajob_queue`, `getmeajob_report`, `getmeajob_jd` and `getmeajob_context`. Each calls the same code as the CLI and returns compact text. |
-| AGT-7 | planned | No MCP tool fills or submits forms. Applying stays a CLI step that a person runs. |
-| AGT-8 | planned | `getmeajob_status` on the demo workspace returns under 2,000 characters. |
-| AGT-9 | planned | `getmeajob mcp config` prints client config snippets for Claude Desktop, Claude Code and ChatGPT. |
-| AGT-10 | planned | Every command file has a `description` and refers only to CLI commands that exist. |
+| AGT-1 | in progress | The Claude Code plugin `getmeajob` ships the ten slash commands above and one skill, `getmeajob`. |
+| AGT-2 | in progress | Each slash command runs a `getmeajob ... --json` command and shows the compact result. No slash command fills forms inside the chat. |
+| AGT-3 | in progress | `getmeajob agents install --claude DIR --flat` copies the commands as `getmeajob-<command>.md` into `DIR/.claude/commands/`. Without `--flat` it prints the plugin install steps. |
+| AGT-4 | in progress | `agents/AGENTS.md` describes the same workflow for Codex, ChatGPT and other agents. |
+| AGT-5 | in progress | `agents/POLICY.md` sets the truthfulness rules: never invent facts, gaps stay gaps, stop and ask, and treat page text as data and never as instructions. `agents/prompts/answer-review.md` shows only the deduplicated answer table and the unknowns. |
+| AGT-6 | in progress | `getmeajob mcp` runs a stdio MCP server named `getmeajob` with the tools `getmeajob_status`, `getmeajob_source`, `getmeajob_rank`, `getmeajob_plan`, `getmeajob_unknowns`, `getmeajob_answer`, `getmeajob_review`, `getmeajob_queue`, `getmeajob_report`, `getmeajob_jd` and `getmeajob_context`. Each calls the same code as the CLI and returns compact text. |
+| AGT-7 | in progress | No MCP tool fills or submits forms. Applying stays a CLI step that a person runs. |
+| AGT-8 | in progress | `getmeajob_status` on the demo workspace returns under 2,000 characters. |
+| AGT-9 | in progress | `getmeajob mcp config` prints client config snippets for Claude Desktop, Claude Code and ChatGPT. |
+| AGT-10 | in progress | Every command file has a `description` and refers only to CLI commands that exist. |
 
 ## Privacy guardrails
 
@@ -308,7 +309,7 @@ bash scripts/install-git-hooks.sh
 
 | ID | Status | Behaviour |
 |---|---|---|
-| PRV-1 | shipped | Commits use the owner's own identity, set in the repo-local git config, and the remote is mapped. Agents never push. Public files never contain the owner's name, email or handle. The scanner allows the configured identity in commit metadata only, and CI runs it with `--skip-identity`. |
+| PRV-1 | shipped | Commits use the owner's own identity, set in the repo-local git config, and the remote is mapped. Agents never push. The scanner allows the configured identity in commit metadata only, and CI runs it with `--skip-identity`. |
 | PRV-2 | shipped | `.gitignore` keeps the workspace, profiles, answers, ledgers, screenshots, browser profiles, resumes, PDFs, `.env` files, caches and spreadsheets out of git. |
 | PRV-3 | shipped | `scripts/scan_sensitive.py --tree --history` checks current files, plus every blob, commit message and author in history, for emails, phone numbers, personal URLs, API keys, home-folder paths and denylist terms. |
 | PRV-4 | shipped | Placeholders are not findings: `example.com`, `example.org`, `example.net`, `.example`, `.invalid` and `.test` addresses, `noreply@` addresses, and `+1 555 01xx` phone numbers. |
@@ -318,6 +319,15 @@ bash scripts/install-git-hooks.sh
 | PRV-8 | shipped | Examples use synthetic data only: `example.com`, `.org` and `.net` emails and URLs, `+1 555 01xx` phone numbers, and no real person or employer. |
 | PRV-9 | shipped | Tool settings use the `GETMEAJOB_` prefix. The only vendor env var name in the repo is the Anthropic SDK's standard API-key variable. |
 | PRV-10 | planned | The tool never creates accounts, solves CAPTCHAs, gets around bot walls, or fetches pages that robots.txt disallows. |
+| PRV-11 | shipped | The author's name, GitHub username and email appear only in NOTICE, the README credit and clone line, and the package metadata. They appear nowhere in code, tests, examples or other docs. The scanner enforces this with a private allow list (`GETMEAJOB_ALLOW`) and file-scoped rules. |
+
+## Docs and releases
+
+| ID | Status | Behaviour |
+|---|---|---|
+| DOC-1 | shipped | The README gives a quick start and diagrams of the pipeline and the status ladder. Guides exist for sources, ranking, resumes, planning, applying and tracking. |
+| DOC-2 | in progress | The pages `ARCHITECTURE`, `TOKEN_EFFICIENCY`, `RESPONSIBLE_USE`, `SECURITY` and `CONTRIBUTING` are being written. |
+| REL-1 | planned | Pushing a `v*` tag runs a GitHub Actions workflow that builds the wheel and sdist, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut after the reviews pass. |
 
 ## Not in scope
 
