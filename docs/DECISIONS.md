@@ -3,7 +3,7 @@
 In short: this file lists every decision made for getmeajob and the reason for it.
 Each row gives the number, the decision, why, what was rejected, who decided (source) and the status.
 
-Last updated: 2026-11-27, after wave 2 (applying, queue, tracking, tracker files, token saving) and the license change. Entries 1 to 136 all date from that day.
+Last updated: 2026-11-27, after the review milestone (3 code review rounds, 2 security rounds, and the fixes). Entries 1 to 161 all date from that day.
 
 Words used in the Source and Status columns:
 
@@ -12,7 +12,7 @@ Words used in the Source and Status columns:
 - research: research notes on an earlier private prototype.
 - decided / left out / open: settled, settled as "not building it", or still waiting on an answer.
 
-Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports and the orchestrator. Build workers add their decisions here after each milestone, each with its reason and the alternative they rejected. To add one:
+Entries 36 and up come from the build workers' reports and the orchestrator. Build workers add their decisions here after each milestone, each with its reason and the alternative they rejected. To add one:
 
 1. Pick the section that fits best.
 2. Use the next free number. Numbers never change.
@@ -30,6 +30,7 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 34 | The license is Apache-2.0 with a NOTICE file that credits the original author. | The owner wants people to use and change the code while crediting them; the NOTICE file is the standard Apache way to require that credit. | MIT (credit only through the copyright line in copies of the code); a custom license (not a recognised open-source license) | owner | decided |
 | 35 | Final repository name. | not recorded | none considered | owner | open |
 | 136 | The author's name, GitHub username and email appear only in NOTICE, the README credit and clone line, and the package metadata. They appear nowhere in code, tests, examples or other docs. The scanner enforces this with a private allow list (`GETMEAJOB_ALLOW`) and file-scoped rules. Everything else personal stays banned. | The owner ruled that the README may use the real repository URL and credit the author, and that the credit needs a defined, checkable place. | Allowing the name anywhere in public files. | owner | decided |
+| 153 | The GitHub repository is private for now, by the owner's choice (decision log 40). An earlier orphaned commit left on GitHub was accepted by the owner (decision log 39). | The owner chose this. | Making the repository public now. | owner | decided |
 
 ## Data, network and tracking
 
@@ -45,13 +46,13 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 37 | A `Retry-After` above 60 seconds makes the client raise an error that names the wait. | Retrying early is impolite, and waiting out the full time would block the CLI. | Retrying early; blocking for the full wait. | build worker | decided |
 | 38 | robots.txt: a 4xx reply allows the page. A 5xx or a timeout after retries refuses it. | RFC 9309 says so. | not recorded | build worker | decided |
 | 39 | The disk cache is used only when a cache time is given, and it stores only 200 replies. No cache time means no cache. | not recorded | not recorded | build worker | decided |
-| 40 | In fixture mode there is no disk cache and no wait between requests, and robots.txt is answered 404 before routes are checked. `offline: true` without fixtures refuses every request. | not recorded | not recorded | build worker | decided |
+| 40 | In fixture mode there is no disk cache and no wait between requests, and robots.txt is answered 404 before routes are checked. The `offline` settings key and the no-network transport are gone: fixtures are the only offline switch. | not recorded | not recorded | build worker | decided |
 | 41 | `JobStore.upsert` keeps the stored description when the incoming one is empty, and does not count that as a change. | It protects the Greenhouse fallback, which lists jobs without full text. | not recorded | build worker | decided |
 | 42 | Reading a record: a missing or null required field becomes None, `[]` or `{}` when the type allows it, and otherwise raises a store error that names the file. A number given for a text field becomes text (job ids). | not recorded | not recorded | build worker | decided |
 | 43 | Queue item ids are short numbers ("1", "2"). Adding an identical open item writes nothing. | Short ids are easy to type, and re-runs stay idempotent. | not recorded | build worker | decided |
 | 44 | Automatic sources can never set `rejected`, `withdrawn` or `skipped`. An unknown source counts as automatic. | not recorded (it follows #20). | not recorded | build worker | decided |
 | 45 | Atomic writes create files readable only by the user (mode 0600). | A side effect of the temp-file call. It is a small privacy gain. | not recorded | build worker | decided |
-| 46 | A job that comes back after being marked closed is reopened to `discovered` by sourcing. | not recorded | not recorded | orchestrator | decided |
+| 46 | A job that comes back after being marked closed is reopened to `discovered` by sourcing, but only when `source` or `liveness` closed it. A job a person closed stays closed. | Automation must not undo a person's edit (#20). | Reopening any closed job. | build worker | decided |
 | 122 | The Excel Tracker sheet has a hidden "Sync (do not edit)" column per row. It stores what getmeajob last wrote: the status and short hashes of Notes and Next action. Only cells that differ from it count as edits on import. | If you save an old copy of the file, rows you did not touch cannot undo newer changes. | Comparing with the current status, which would revert automatic progress. | build worker | decided |
 | 123 | `getmeajob report` keeps edits you have not imported yet when it rewrites the file. It refuses to overwrite a file it cannot read. | No edit is lost. | Importing during `report`, which would be a hidden write. | build worker | decided |
 | 124 | A hidden "Open queue items" column feeds the yellow row fill. | The colour stays right when you sort, and the visible columns stay exactly as specified. | Fills tied to fixed row ranges; formulas that point at the Queue sheet. | build worker | decided |
@@ -65,6 +66,10 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 132 | `getmeajob tokens estimate` needs no workspace. A relative path is tried from the current folder first, then from the workspace. | It then works on any file. | not recorded | build worker | decided |
 | 133 | `getmeajob queue add` takes any kind (default `manual`), and the `queue` list shows 20 rows by default. | It stays flexible and stays under 40 lines. | not recorded | build worker | decided |
 | 134 | The Read me sheet shows two counts per status: live `COUNTIF` formulas and fixed counts written at export. | An app that does not recalculate on open still shows numbers. | not recorded | build worker | decided |
+| 138 | `status` suggests `getmeajob plan` when a ready plan no longer matches the profile or answers. | A stale plan is skipped by apply (#149), so the person needs to know the fix. | Saying nothing. | orchestrator | decided |
+| 139 | The small mtime cache for the append-only logs stays. | Removing it made status logging quadratic: 0.11 s with it and 15.3 s without it for 2,000 records. | Removing it for simplicity. | orchestrator | decided |
+| 140 | `status` suggests `getmeajob apply --mode hold --headed` after a dry run on a ready job. When `exports/tracker.xlsx` is newer than everything in `data/`, it prints "nothing to do; the tracker is up to date". | not recorded | not recorded | build worker | decided |
+| 141 | HTTP refuses private addresses on every hop, including redirects. Redirects are capped at 5 and replies are streamed with a 10 MB cap. DNS lookups run only on the real network. Under mock or fixture transports only IP literals are checked. A fresh cache hit no longer re-checks robots.txt. | A page or a redirect must not point the tool at the user's own network. A literal-only check does no DNS under fixtures and is simpler than skipping fixtures entirely. | Skipping the check under fixtures entirely. | build worker | decided |
 
 ## Sourcing and scope
 
@@ -75,7 +80,7 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 10 | No email status reader and no scam flags. | The owner did not select them. | none considered | owner | left out |
 | 11 | Board discovery uses only the user's own list, URLs, careers pages and ATS probes. There is no third-party company lookup service. | Such a service would receive the user's target list, and its availability is outside our control. | A company-domain lookup API. | orchestrator | decided |
 | 32 | Heavier career-site systems (Workday, Oracle, Eightfold and similar) are left out. | They use account portals and bot walls, and they are outside the owner's scope. | none considered | orchestrator, research | left out |
-| 33 | Features described in the research notes on an earlier private prototype are left out: chat-app approvals, hash-chained audit, durable runtimes, outreach and contact lists, and interview prep. | They are personal, or too heavy for a CLI. | none considered | research, owner | left out |
+| 33 | Left out: chat-app approvals, hash-chained audit, durable runtimes, outreach messages and contact lists, and interview prep. | They are personal, outside the job-application scope, or too heavy for a CLI. | none considered | research, owner | left out |
 | 47 | Boards are grouped by ATS. Groups run side by side, boards inside a group run one after another, and a bot check skips the rest of that group. | A site that already blocked us should not be hit again. | One thread per board. | build worker | decided |
 | 48 | Feed jobs never close when they drop out of a feed. | A feed is a short latest list, so absence proves nothing. | Treating a feed like a board. | build worker | decided |
 | 49 | HN Who is hiring sends two requests when its cache is cold: one to find the current thread (cached 24 hours), one for its comments (cached 6 hours). | There is no single-request way to get the comments. | Algolia comment pages, which take up to 8 requests. | build worker | decided |
@@ -100,8 +105,8 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 7 | Ashby form questions come from the same no-login request that Ashby's public job page makes (cached, at most 1 per second). Reading the rendered page in Chromium is the fallback. | The owner's choice. It is fast and needs no browser for planning. | Reading the rendered page only. | owner | decided |
 | 15 | Optional AI drafting covers free-text questions only, behind `getmeajob plan draft`, with a token budget, a cache keyed by prompt hash, and every draft marked `needs_review`. Submit mode refuses plans with unreviewed drafts. Providers: Anthropic (optional extra) and a "command" provider that pipes the prompt to any CLI. | The owner's spec. The command provider covers other vendors with no extra dependency. | An OpenAI SDK provider. | owner, orchestrator | decided |
 | 16 | The default drafting model is `claude-sonnet-5-5`. | A current, capable mid-tier model. | Opus (cost); Haiku (quality of free text). | orchestrator | decided (owner may change) |
-| 17 | Consent questions are answered only when the profile opts in. Questions about AI or automation use are never answered automatically. A form that says not to use automated tools blocks the plan. | Honesty and site terms. Research found an old rule that answered "yes" to such questions. | none considered | orchestrator, research | decided |
-| 18 | The option matcher never picks the first option as a fallback. An ambiguous match becomes an unknown, with a reason. | Research found silent wrong picks. | none considered | research | decided |
+| 17 | Consent questions are answered only when the profile opts in. Questions about AI or automation use are never answered automatically. A form that says not to use automated tools blocks the plan (see #137). | Honesty and site terms. | none considered | orchestrator, research | decided |
+| 18 | The option matcher never picks the first option as a fallback. An ambiguous match becomes an unknown, with a reason. | A silent wrong pick is worse than a question shown to the person. | A first-option fallback. | research | decided |
 | 19 | EEO and demographic questions get the "decline" option when the profile leaves them unset. | The questions are voluntary, and declining is truthful. | none considered | orchestrator | decided |
 | 22 | Resumes per role are built by deterministic selection and ordering from a fact bank the candidate writes. The PDF comes from Chromium `page.pdf()`. | Truthful by construction. No LaTeX toolchain. It reuses the browser the form filler already needs. | LLM rewriting of bullets; LaTeX. | owner, orchestrator | decided |
 | 23 | `getmeajob init --demo` generates the demo resume PDF with a tiny built-in PDF writer. | No binary files in the repo. | none considered | orchestrator | decided |
@@ -120,8 +125,8 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 75 | Compaction order: first swap in the bank's `short` wording, then drop the lowest-scoring bullets. Ties drop later roles and later bullets first. At least 2 bullets stay per role. The page count is checked from the PDF too. After compaction, `resume.md`, `resume.html` and `report.json` are rewritten to match, with a `compaction` note. | not recorded | not recorded | build worker | decided |
 | 76 | `resume.md` and `resume.html` carry no timestamps. The role folder is `<company slug, 30>-<title slug, 40>`. A second job with the same company and title shares the folder, and the job keys are merged. | Same input gives same output. | not recorded | build worker | decided |
 | 77 | The skill "Go" is matched by a list of patterns that accepts a language context (a list of languages, "in Go", "Go services", "write Go"). Aliases such as postgresql and k8s point to the same pattern. | "Go to market" must not count as the language. | not recorded | build worker | decided |
-| 78 | Extra answer kinds: sponsorship, work authorization, former employer, location, compensation, file, education and languages. | One field lookup cannot answer these truthfully. | The old prototype's regex-only yes/no answers. | build worker | decided |
-| 79 | A sponsorship or work-permit question with no country uses the job location. For a remote job it uses the home country. The answer carries a note saying so. | The demo question needs a truthful answer. | Always answering "No", or always leaving it unknown. | build worker | decided |
+| 78 | Extra answer kinds: sponsorship, work authorization, former employer, location, compensation, file, education and languages. | One field lookup cannot answer these truthfully. | Answering them with one generic yes/no pattern. | build worker | decided |
+| 79 | A sponsorship or work-permit question with no country uses the job location. The answer carries a note saying so. A remote job no longer falls back to the home country (changed in #146). | The demo question needs a truthful answer. | Always answering "No", or always leaving it unknown. | build worker | decided (changed by #146) |
 | 80 | Sanctions, relative or conflict, and referral questions are unknown when required and blank when optional. | The profile has no fields for them, and the schema is fixed. | A blind "No", or adding profile fields. | build worker | decided |
 | 81 | A skill yes/no question gets "Yes" only for `experience.primary_languages`, never "No". | `preferences.yaml` is not an answer source. | Reading skills from preferences. | build worker | decided |
 | 82 | Former-employer questions match only when the whole company name matches after dropping legal suffixes, and the question names the company or says "us" or "our company". | "Initech Example Ltd" is not "Example Corp", and "worked with Kubernetes" is a skill question. | not recorded | build worker | decided |
@@ -131,7 +136,7 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 86 | The AI-use rule also reads the question description. Refusal patterns do not fire on a bare "agents". | "Recruitment agents" must not block a plan. | not recorded | build worker | decided |
 | 87 | In the Greenhouse fixture, gender, race and veteran questions sit in `demographic_questions`, `compliance` holds only the EEOC notice, and education comes from a top-level `education: education_optional`. | Each demo question then appears exactly once. | not recorded | build worker | decided |
 | 88 | A schema problem is recorded as `blocked_reason`, and failed fetches are never cached. | Plan has no note field. | not recorded | build worker | decided |
-| 89 | The plan's `inputs_hash` covers the schema, the profile, only the answers relevant to that job, the rules and refusal patterns, resume size and modified time, and job fields. | Approving one job should not re-plan the others. | not recorded | build worker | decided |
+| 89 | The plan's `inputs_hash` covers the schema, the profile, only the answers relevant to that job, the rules, the job fields and description, and the resume's path relative to the workspace plus its file contents. Plans store workspace-relative file paths. | Approving one job should not re-plan the others, and moving the workspace should keep plans current. | Hashing the absolute path, size and modified time of the resume, which made a copied or moved workspace look stale. | build worker, orchestrator | decided |
 | 90 | The Ashby Chromium fallback never runs offline or with fixtures, and checks robots.txt first. | not recorded | not recorded | build worker | decided |
 | 91 | `getmeajob plan` is one parser that dispatches on its first word. Limitation: `plan K1 --refresh K2` errors, so options go after all keys. | `plan KEY...` and `plan show KEY` cannot both be argparse subparsers. | not recorded | build worker | decided |
 | 92 | Answer stubs: a question asked by one company goes under `by_company.<slug>`, otherwise under `global`. `plan answer` rewrites `answers.yaml` with a fixed header, so old comments in that file are lost. | not recorded | not recorded | build worker | decided |
@@ -143,7 +148,7 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 111 | Submit needs opt-in. If no selected job's board is listed in `apply.submit_boards`, the run stops with exit 2. If only some are listed, the others are `skipped_not_ready`. | Jobs on opted-in boards can still go ahead. | Refusing the whole run when only some boards are not opted in. | build worker | decided |
 | 112 | The per-company cap counts distinct jobs per company name with `submitted`, `awaiting_human` or `needs_email_code` in the last 30 days. Dry runs are not capped. `per_company_cap: 0` turns the cap off. | Those are applications that were sent or may have been sent. | not recorded | build worker | decided |
 | 113 | An exclusion matches the board slug, the full job key, or part of the company name. | not recorded | not recorded | build worker | decided |
-| 114 | An error after the Submit click is recorded as `awaiting_human`. | No later run can click Submit twice. | not recorded | build worker | decided |
+| 114 | After the Submit click, any outcome except `submitted` is recorded as `awaiting_human`. This covers an error, an emailed code and a spam flag. | No later run can click Submit twice. | Recording these as `error` or `needs_email_code` and allowing a retry. | build worker | decided |
 | 115 | Hold run details: with fill problems or unreviewed drafts, `--click-submit` does not click, and the person still gets the window. If the person does not finish, a `fill_problem` queue item is added next to the result. A timeout while the code step is showing becomes `needs_email_code`. A real page crash is `error`, not `closed_by_user`. | not recorded | not recorded | build worker | decided |
 | 116 | Employment rows come from `profile.employment[]`, not from the plan. | The form schema has no employment questions. | not recorded | build worker | decided |
 | 117 | The filler never picks "Other" for a school on its own. An unmatched school is a problem only when the field is required. | not recorded | Automatic "Other" pick. | build worker | decided |
@@ -151,18 +156,30 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 119 | With fixtures on, paths in `forms.json` resolve next to that file, then one folder up. A `?variant` query is kept. Browser requests other than `file:` are aborted. | The demo and tests must make no network calls. | not recorded | build worker | decided |
 | 120 | `getmeajob inspect` also needs a workspace. | It reads the fixture settings from there, and the brief said every command needs one. | not recorded | build worker | decided |
 | 121 | On cookie banners the filler clicks only "necessary only" style buttons inside a banner. | not recorded | not recorded | build worker | decided |
+| 137 | The "do not use automated tools" check is one sentence-level detector used for form questions, job text and page text. A sentence counts when the tool is what is forbidden (used, written by, or the subject), there is a prohibition, it is about the application, and it is not the employer describing its own tools. Direct forms also count: "must be completed by a human", "if you are an AI", and notes to AI assistants. The result is `automation_refused`. The user-extensible `automation_refusal` list in `rules.yaml` was removed (never released). | Three review rounds showed a single regex either missed real notices or blocked harmless job text. A table test pins 20 notices and 18 harmless sentences. | A list of free regexes per place (two lists drifted apart). | orchestrator | decided |
+| 142 | Jobs a person ruled out (tracked as skipped, withdrawn, rejected, closed or ghosted) or that the board closed are never opened, in every mode. They report `skipped_excluded`. | The tool must not open jobs the person dropped. No new status was added to keep the status list short. | A new status for ruled-out jobs. | build worker | decided |
+| 143 | The option matcher rejects a hit where only one side is negated, but keeps real ambiguity (for example "veteran" still gives "not guessing"). | A negated option must never match its opposite. | Dropping the check, or rejecting every ambiguity. | build worker | decided |
+| 144 | In hold mode, success text that was already on the page before the fill does not count as success. The runner takes a scan before filling and compares. | A page that shows "thanks" text from the start would end the wait at once. | Reading success text with no baseline. | build worker | decided |
+| 145 | The bot-check and account-wall text checks read only visible forms, with no whole-page fallback. Frames and a "just a moment" title still count anywhere. Refusal notices are the exception: they are read across the whole page and the job text (#137). | A whole-page fallback brought back a false stop on the account-wall page, where job text mentions bots. | A whole-page fallback for every check. | build worker | decided |
+| 146 | The remote-job and home-country inference for sponsorship questions is removed. The demo Greenhouse job now has 2 open questions. | Guessing a country for a remote job could give an untruthful answer. | Keeping the inference (#79 as first written). | build worker | decided |
+| 147 | The MCP answer tool saves agent answers as `{value, needs_review: true, source: agent}`. `getmeajob plan approve --all` (and `approve_job` with no key) clears them across the global, by_company and by_job sections. Submit refuses unreviewed agent answers. | An agent's answer must be read by a person before anything is sent. | Treating agent answers as final. | build worker | decided |
+| 148 | File answers must be inside the workspace or be `files.resume` or `files.cover_letter`. The check runs at plan time and again at fill time. The MCP tool refuses file questions. | An answer file must not point at any file on the machine. | Checking only at plan time. | build worker | decided |
+| 149 | A plan older than the profile, answers or job text is skipped by apply with the hint `getmeajob plan KEY`. The stale check comes after the "not ready" check, since not-ready plans already carry their own hint. | An outdated plan could send old answers. | Applying stale plans anyway. | build worker | decided |
+| 150 | The filler never clicks a submit button, or a button with no type inside a form, for yes/no buttons, Add another, menu options, controls or the cookie banner. A dry run still may upload attachments as soon as they are added, because some sites do this. `docs/applying.md` says so. | A stray click must not submit a form. The upload behaviour is the site's, not ours. | Clicking any button that looked right. | build worker | decided |
+| 151 | Employer text is escaped (`<` and `>`) before it goes into the drafting prompt. A reply cut at `max_tokens` (1024) is not saved and becomes ask-a-human. The default `plan draft` budget is 10,000, which fits 5 drafts. | Employer text must not close the prompt tags, and a cut reply is not a finished answer. The old default of 4000 fit only 2 drafts. | Saving cut replies; keeping the 4000 default. | build worker | decided |
+| 152 | The quickstart answers the two open demo questions from `examples/demo/quickstart-answers.yaml` (copied by `init --demo`). The script feeds that file to `plan answer`. | It replaces an awk and sed block and keeps the demo answers as visible synthetic data. | Editing the answers file with shell text tools. | build worker | decided |
 
 ## Build, agents and process
 
 | # | Decision | Why | Rejected | Source | Status |
 |---|---|---|---|---|---|
-| 2 | Clean-room rewrite. Research agents read the old sources and wrote prose notes (the research notes on an earlier private prototype). Build agents never open those sources. | The owner requires a clean-room rewrite, and the old sources contain personal data. | Porting files and editing them. | owner | decided |
+| 2 | Clean-room rewrite. Research agents wrote prose notes (the research notes on an earlier private prototype). Build agents never open the old sources. | The owner requires a clean-room rewrite, and the old sources are not for the public repo. | Porting files and editing them. | owner | decided |
 | 4 | The CLI uses argparse. | No extra dependency, and easy to type-check. | typer; click. | orchestrator | decided |
 | 24 | The MCP server has no tool that fills or submits forms. | Form filling stays a step that a person runs. | none considered | orchestrator | decided |
 | 26 | The package requires `playwright>=1.45`. The dev environment pins 1.62 so it reuses a Chromium build already on the machine. | Avoids a browser download. | none considered | orchestrator | decided |
 | 28 | The build backend is hatchling. `examples/` and `agents/` are included in the wheel. | The demo works after a plain pip install. | none considered | orchestrator | decided |
 | 29 | The private denylist stays outside the repo, at a path the owner chose. The scanner reads it through `GETMEAJOB_DENYLIST`. A private allow list (`GETMEAJOB_ALLOW`) names the few places where the author's credit is allowed (see #136). CI uses generic patterns only. | The list itself is personal. | none considered | owner | decided |
-| 30 | The scanner matches env-style denylist terms case-sensitively, as whole tokens. | Avoids false hits on ordinary code words such as `dry_run`. | none considered | orchestrator | decided |
+| 30 | The scanner matches env-style denylist terms case-sensitively, as whole tokens. | Avoids false hits on ordinary code words such as `max_items`. | none considered | orchestrator | decided |
 | 31 | Python 3.11 is the minimum version. CI runs on 3.11 and 3.12. | not recorded | none considered | owner | decided |
 | 94 | `--json`, `-q` and `--home` also work after the command name, through a parser subclass. A subcommand that defines them again fails at startup. | not recorded | not recorded | build worker | decided |
 | 95 | `main` returns argparse's exit code instead of raising `SystemExit`. An OS error gives a friendly message and exit 2, and a broken pipe exits 0. Real bugs still show a traceback. | not recorded | not recorded | build worker | decided |
@@ -178,6 +195,14 @@ Entries 36 and up come from the wave 0, wave 1 and wave 2 build workers' reports
 | 105 | The test socket guard also blocks DNS lookups, raises an error httpx does not retry, and clears `GETMEAJOB_*` env vars during tests. | A swallowed error would turn into silent retries. | not recorded | build worker | decided |
 | 106 | The private denylist matches ALL-CAPS terms case-sensitively, and all denylist terms are checked in one combined pass. | not recorded | not recorded | orchestrator | decided |
 | 135 | Releases: a GitHub Actions workflow builds the wheel and sdist when a `v*` tag is pushed, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut only after the review gates pass. GitHub Packages is not used. PyPI publishing waits until the repo is public and the owner has a PyPI account. | Pinned, tested, installable snapshots with release notes. GitHub Packages has no Python registry. | Publishing to GitHub Packages; publishing to PyPI now. | owner | decided |
+| 154 | The scanner has an `--all-objects` mode that also scans unreachable git objects (`rev-list --reflog` plus `cat-file --batch-all-objects`). A blob with no path shows as `(no path)`. It is documented in `docs/SECURITY.md`. | `--history` misses orphaned and reflog-only objects. | Relying on `--history` alone. | build worker | decided |
+| 155 | `.gitignore` also ignores key and credential files (`.netrc`, SSH keys, `*.pem`, `*.key`, `secrets*.json`), among other personal-file patterns. `!agents/**/*.md` keeps the plugin's `tracker.md` in the sdist. | Secrets must not be committed by accident. | Relying on the scanner alone. | orchestrator, build worker | decided |
+| 156 | hatchling is a dev dependency. The sdist include list adds `/.claude-plugin`, `/docs` and `/NOTICE`. `tests/core/test_packaging.py` builds the sdist and lists it. | The packaging test must run in CI, and it caught a real ignore-rule problem. | Skipping the test when hatchling is missing. | orchestrator, build worker | decided |
+| 157 | `inspect` and `boards` stay. | They were in the original plan, and `inspect` helps adapt to changed real forms. | Removing them to shrink the CLI. | orchestrator | decided |
+| 158 | `pyproject.toml` floors are `mcp>=2` and `anthropic>=2.14`. | mcp 2.0 renamed FastMCP, so 2 is the floor. For anthropic the floor is the installed major.minor, because the wheel has no changelog. | Unpinned floors. | build worker | decided |
+| 159 | `getmeajob agents install` reads the repository name from the package metadata (`Project-URL`, `Repository`). The placeholder owner text is gone. | An installed wheel then prints the real repository. | A placeholder the user must replace. | build worker | decided |
+| 160 | One shared lookup (`JobStore.find`) keeps the "Did you mean" hints. Several unused helpers, aliases and re-exports were deleted. `Settings.offline` stays as a field filled from `fixtures`, and `Ledger.last_status` stays, because tests and the apply code use them. | Fewer duplicate paths, without breaking code that still depends on these. | Deleting them in the same change. | build worker | decided |
+| 161 | Review gates: code review took 3 rounds and ended PASS. Security and privacy review took 2 rounds and ended CLEAN. | The release rule (#135) needs both gates before v0.1.0. | not recorded | orchestrator | decided |
 
 ## Open
 
@@ -185,6 +210,7 @@ Waiting on the owner:
 
 1. Final repository name (#35). The reason is not recorded because the decision is not made yet.
 2. Reason for the Python 3.11 minimum (#31) is not recorded.
+3. The repository stays private for now (#153). Going public, and the first PyPI release, wait for the owner.
 
 Decided, but the owner may still change them:
 
@@ -193,7 +219,7 @@ Decided, but the owner may still change them:
 
 Reason not recorded (build workers gave none):
 
-Rows #36, #39, #40, #42, #44, #46, #51, #53, #55, #56, #57, #58, #62, #68, #72, #74, #75, #83, #85, #90, #92, #94, #95, #96, #101, #102, #106, #113, #115, #121. Ask the worker or the owner if any of these matter.
+Rows #36, #39, #40, #42, #44, #46, #51, #53, #55, #56, #57, #58, #62, #68, #72, #74, #75, #83, #85, #90, #92, #94, #95, #96, #101, #102, #106, #113, #115, #121, #140. Ask the worker or the owner if any of these matter.
 
 Left for later by the build workers:
 
@@ -203,3 +229,6 @@ Left for later by the build workers:
 4. There is no `--retry` for jobs held as waiting for the human (apply).
 5. Ashby education-history fields are reported as a problem by the filler.
 6. Excel and Numbers have not opened the tracker file by hand (see `docs/TESTS.md`).
+7. Headed hold mode has not run in a real visible window.
+8. The feed terms pages need a manual re-check before release.
+9. `docs/RESPONSIBLE_USE.md` names only `apply.exclude`, though apply also honours `exclude_companies`. It is incomplete, not false.

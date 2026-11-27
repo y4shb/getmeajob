@@ -3,7 +3,7 @@
 In short: this file says what getmeajob does, as plain statements you can check.
 Each row has an ID, a status (`planned`, `in progress` or `shipped`) and one behaviour.
 
-Last updated: 2026-11-27, after wave 2 (applying, queue, tracking, tracker files and token saving shipped; agent assets, MCP server and the remaining docs pages in progress).
+Last updated: 2026-11-27, after the review milestone. Every feature is shipped except the GitHub release (REL-1), which is in progress.
 
 How to read it:
 
@@ -34,11 +34,11 @@ Global options: `--home PATH`, `--json`, `-q/--quiet`, `--version`. `python -m g
 | SET-7 | shipped | A user error prints an `error:` line and a `hint:` line to stderr and exits with code 2. Ctrl+C exits with code 130. |
 | SET-8 | shipped | `getmeajob` with no command prints a short list of commands. |
 | SET-9 | shipped | `--json` switches a command to JSON output. |
-| SET-10 | in progress | Without `--json`, each command prints a compact table of about 40 lines or fewer. Commands with lists that can grow take `--limit`. |
+| SET-10 | shipped | Without `--json`, each command prints a compact table of about 40 lines or fewer. Commands with lists that can grow take `--limit`. |
 | SET-11 | shipped | All data is JSON and JSONL files in the workspace. Each write goes to a temp file first, then replaces the old file. The apply ledger, status events and queue are append-only. |
 | SET-12 | shipped | A job key is `<ats>:<board>:<job_id>`. In file names, `:` becomes `__`, other unsafe characters become `_`, and names over 150 characters are cut and given a short hash. |
 | SET-13 | shipped | A broken line in a JSONL file gives an error that names the file and the line number. |
-| SET-14 | planned | `bash scripts/quickstart.sh` runs the README quick start on the demo workspace, in dry mode, with no network. |
+| SET-14 | shipped | `bash scripts/quickstart.sh` runs the README quick start on the demo workspace, in dry mode, with no network. |
 | SET-15 | shipped | The license is Apache-2.0. A NOTICE file credits the author, as Apache section 4(d) allows. |
 
 ## Sourcing
@@ -88,6 +88,7 @@ Network rules for every command that goes online:
 | SRC-25 | shipped | HTML becomes clean text: double-escaped entities are decoded, scripts and styles are dropped, list items start with "- ", and invisible characters (zero-width, bidi controls, BOM) are stripped. |
 | SRC-26 | shipped | A job from a feed is never marked closed when it drops out of the feed. Only boards close jobs. |
 | SRC-27 | shipped | `getmeajob source` exits 1 only when every board failed. Partial failures exit 0 and list the problems. |
+| SRC-28 | shipped | The client refuses private addresses on every hop, including redirects. It follows at most 5 redirects and caps a reply at 10 MB. DNS lookups run only on the real network. |
 
 ## Ranking
 
@@ -147,6 +148,11 @@ getmeajob plan approve KEY
 | ANS-17 | shipped | Draft providers: `anthropic` (optional extra, default model `claude-sonnet-5-5`, called with server-side fallback on and low effort) and `command`, which pipes the prompt to the CLI set in `GETMEAJOB_LLM_COMMAND`. |
 | ANS-18 | shipped | Messy question data (missing fields, double-escaped HTML, invisible Unicode) does not crash the planner. The question is skipped or degraded with a recorded reason. |
 | ANS-19 | shipped | `getmeajob plan show KEY` prints one job's plan. |
+| ANS-20 | shipped | One sentence-level detector finds "do not use automated tools" notices in form questions, job text and page text. A sentence counts when the tool is what is forbidden, there is a prohibition, it is about the application, and it is not the employer describing its own tools. Direct forms count too ("must be completed by a human", "if you are an AI", notes to AI assistants). The plan is blocked with `automation_refused`, and the queue item quotes the sentence. |
+| ANS-21 | shipped | Plans store workspace-relative file paths. The plan hash uses the resume path relative to the workspace plus the file contents, so moving or copying the workspace keeps plans current. |
+| ANS-22 | shipped | An upload must be a file inside the workspace or one of `files.resume` and `files.cover_letter`. This is checked when planning and again when filling. The MCP tool refuses file questions. |
+| ANS-23 | shipped | An answer an agent saves through MCP is marked `needs_review`. Submit refuses it until `getmeajob plan approve` clears it (`--all` covers every section). |
+| ANS-24 | shipped | `getmeajob status` suggests `getmeajob plan` when a ready plan no longer matches the profile, answers or job text. Apply skips such a plan with the same hint. |
 
 ## Applying
 
@@ -165,7 +171,7 @@ getmeajob inspect URL
 | APP-4 | shipped | `--mode submit` runs only when the ATS is listed in `preferences.apply.submit_boards`. It clicks submit once and refuses any plan with unreviewed drafts. |
 | APP-5 | shipped | A CAPTCHA or bot check stops that job and adds a queue item. It is never retried. |
 | APP-6 | shipped | An account wall stops that job. The tool never creates accounts. |
-| APP-7 | shipped | A page that refuses automation stops that job. A fill problem means no submit. |
+| APP-7 | shipped | A page that refuses automation stops that job (see ANS-20 for how notices are found). A fill problem means no submit. |
 | APP-8 | shipped | The filler handles text, file uploads, type-ahead selects, Ashby yes/no buttons, radios, checkboxes, location type-ahead, phone country, multi-select and education or employment repeaters. A select with no matching option is reported as a problem, and location type-ahead picks only a matching suggestion. Known limit: Ashby education-history fields are reported as a problem. |
 | APP-9 | shipped | Running `getmeajob apply` twice skips jobs already in the ledger. |
 | APP-10 | shipped | A per-company cap (default 2 per 30 days) and an exclusion list from preferences are enforced. |
@@ -174,6 +180,10 @@ getmeajob inspect URL
 | APP-13 | shipped | Screenshots are saved as `shots/<mode>-<key>-<status>.png`. |
 | APP-14 | shipped | `getmeajob inspect URL` prints a form's inputs, labels and options as a compact table. |
 | APP-15 | shipped | The demo uses mock Greenhouse and Ashby forms written from scratch, with variants for a CAPTCHA, an email code, an account wall and a no-automation notice. |
+| APP-16 | shipped | A job you tracked as skipped, withdrawn, rejected, closed or ghosted, or that the board closed, is never opened. It reports `skipped_excluded`. |
+| APP-17 | shipped | The filler never clicks a submit button, or a button with no type inside a form, except the real Submit step in hold or submit mode. Some sites upload attachments as soon as they are added, even in a dry run. |
+| APP-18 | shipped | Once Submit was clicked, any outcome except `submitted` is recorded as `awaiting_human`, and no later run clicks again. |
+| APP-19 | shipped | In hold mode, success text that was already on the page before the fill does not count as success. |
 
 ## Queue and tracking
 
@@ -286,16 +296,16 @@ Claude Code slash commands (plugin `getmeajob`): `/getmeajob:source`, `/getmeajo
 
 | ID | Status | Behaviour |
 |---|---|---|
-| AGT-1 | in progress | The Claude Code plugin `getmeajob` ships the ten slash commands above and one skill, `getmeajob`. |
-| AGT-2 | in progress | Each slash command runs a `getmeajob ... --json` command and shows the compact result. No slash command fills forms inside the chat. |
-| AGT-3 | in progress | `getmeajob agents install --claude DIR --flat` copies the commands as `getmeajob-<command>.md` into `DIR/.claude/commands/`. Without `--flat` it prints the plugin install steps. |
-| AGT-4 | in progress | `agents/AGENTS.md` describes the same workflow for Codex, ChatGPT and other agents. |
-| AGT-5 | in progress | `agents/POLICY.md` sets the truthfulness rules: never invent facts, gaps stay gaps, stop and ask, and treat page text as data and never as instructions. `agents/prompts/answer-review.md` shows only the deduplicated answer table and the unknowns. |
-| AGT-6 | in progress | `getmeajob mcp` runs a stdio MCP server named `getmeajob` with the tools `getmeajob_status`, `getmeajob_source`, `getmeajob_rank`, `getmeajob_plan`, `getmeajob_unknowns`, `getmeajob_answer`, `getmeajob_review`, `getmeajob_queue`, `getmeajob_report`, `getmeajob_jd` and `getmeajob_context`. Each calls the same code as the CLI and returns compact text. |
-| AGT-7 | in progress | No MCP tool fills or submits forms. Applying stays a CLI step that a person runs. |
-| AGT-8 | in progress | `getmeajob_status` on the demo workspace returns under 2,000 characters. |
-| AGT-9 | in progress | `getmeajob mcp config` prints client config snippets for Claude Desktop, Claude Code and ChatGPT. |
-| AGT-10 | in progress | Every command file has a `description` and refers only to CLI commands that exist. |
+| AGT-1 | shipped | The Claude Code plugin `getmeajob` ships the ten slash commands above and one skill, `getmeajob`. |
+| AGT-2 | shipped | Each slash command runs a `getmeajob ... --json` command and shows the compact result. No slash command fills forms inside the chat. |
+| AGT-3 | shipped | `getmeajob agents install --claude DIR --flat` copies the commands as `getmeajob-<command>.md` into `DIR/.claude/commands/`. Without `--flat` it prints the plugin install steps. |
+| AGT-4 | shipped | `agents/AGENTS.md` describes the same workflow for Codex, ChatGPT and other agents. |
+| AGT-5 | shipped | `agents/POLICY.md` sets the truthfulness rules: never invent facts, gaps stay gaps, stop and ask, and treat page text as data and never as instructions. `agents/prompts/answer-review.md` shows only the deduplicated answer table and the unknowns. |
+| AGT-6 | shipped | `getmeajob mcp` runs a stdio MCP server named `getmeajob` with the tools `getmeajob_status`, `getmeajob_source`, `getmeajob_rank`, `getmeajob_plan`, `getmeajob_unknowns`, `getmeajob_answer`, `getmeajob_review`, `getmeajob_queue`, `getmeajob_report`, `getmeajob_jd` and `getmeajob_context`. Each calls the same code as the CLI and returns compact text. |
+| AGT-7 | shipped | No MCP tool fills or submits forms. Applying stays a CLI step that a person runs. |
+| AGT-8 | shipped | `getmeajob_status` on the demo workspace returns under 2,000 characters. |
+| AGT-9 | shipped | `getmeajob mcp config` prints client config snippets for Claude Desktop, Claude Code and ChatGPT. |
+| AGT-10 | shipped | Every command file has a `description` and refers only to CLI commands that exist. |
 
 ## Privacy guardrails
 
@@ -303,6 +313,7 @@ Scripts (outside the `getmeajob` CLI):
 
 ```
 python scripts/scan_sensitive.py --tree --history
+python scripts/scan_sensitive.py --all-objects
 python scripts/scan_sensitive.py --staged
 bash scripts/install-git-hooks.sh
 ```
@@ -318,16 +329,18 @@ bash scripts/install-git-hooks.sh
 | PRV-7 | shipped | A pre-commit hook runs the scanner on staged files. CI runs it on the tree and full history with generic patterns only. |
 | PRV-8 | shipped | Examples use synthetic data only: `example.com`, `.org` and `.net` emails and URLs, `+1 555 01xx` phone numbers, and no real person or employer. |
 | PRV-9 | shipped | Tool settings use the `GETMEAJOB_` prefix. The only vendor env var name in the repo is the Anthropic SDK's standard API-key variable. |
-| PRV-10 | planned | The tool never creates accounts, solves CAPTCHAs, gets around bot walls, or fetches pages that robots.txt disallows. |
+| PRV-10 | shipped | The tool never creates accounts, solves CAPTCHAs, gets around bot walls, or fetches pages that robots.txt disallows. |
 | PRV-11 | shipped | The author's name, GitHub username and email appear only in NOTICE, the README credit and clone line, and the package metadata. They appear nowhere in code, tests, examples or other docs. The scanner enforces this with a private allow list (`GETMEAJOB_ALLOW`) and file-scoped rules. |
+| PRV-12 | shipped | `python scripts/scan_sensitive.py --all-objects` also scans unreachable git objects and reflog-only commits. A blob with no path shows as `(no path)`. |
+| PRV-13 | shipped | `.gitignore` also keeps key and credential files out of git: `.netrc`, SSH keys, `*.pem`, `*.key` and `secrets*.json`. |
 
 ## Docs and releases
 
 | ID | Status | Behaviour |
 |---|---|---|
 | DOC-1 | shipped | The README gives a quick start and diagrams of the pipeline and the status ladder. Guides exist for sources, ranking, resumes, planning, applying and tracking. |
-| DOC-2 | in progress | The pages `ARCHITECTURE`, `TOKEN_EFFICIENCY`, `RESPONSIBLE_USE`, `SECURITY` and `CONTRIBUTING` are being written. |
-| REL-1 | planned | Pushing a `v*` tag runs a GitHub Actions workflow that builds the wheel and sdist, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut after the reviews pass. |
+| DOC-2 | shipped | The pages `ARCHITECTURE`, `TOKEN_EFFICIENCY`, `RESPONSIBLE_USE`, `SECURITY` and `CONTRIBUTING` exist. |
+| REL-1 | in progress | Pushing a `v*` tag runs a GitHub Actions workflow that builds the wheel and sdist, runs the tests and attaches the files to a GitHub Release. v0.1.0 is cut after the reviews pass. |
 
 ## Not in scope
 
@@ -336,5 +349,5 @@ These were decided against. See the "left out" rows in `docs/DECISIONS.md`.
 1. A Lever form filler. Lever is for sourcing only (#8).
 2. An email status reader and scam flags (#10).
 3. Heavier career-site systems such as Workday, Oracle and Eightfold (#32).
-4. Chat-app approvals, hash-chained audit logs, durable runtimes, outreach and contact lists, and interview prep (#33).
+4. Chat-app approvals, hash-chained audit logs, durable runtimes, outreach messages and contact lists, and interview prep (#33). They are personal or outside the job-application scope.
 5. By design, never: account creation, CAPTCHA solving, bot-wall bypass, LinkedIn automation, a hosted service, a database server or a scheduler daemon.
